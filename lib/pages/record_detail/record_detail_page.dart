@@ -147,8 +147,12 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
     // 빠른/느린 문항 카운트
     int fastCount = 0;
     int slowCount = 0;
+    int unsolvedCount = 0;
+
     for (final sec in exam.questionSeconds) {
-      if (sec < avg * 0.7) {
+      if (sec == 0) {
+        unsolvedCount++;
+      } else if (sec < avg * 0.7) {
         fastCount++;
       } else if (sec > avg * 1.5) {
         slowCount++;
@@ -167,6 +171,10 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
               // 요약 배지
               Row(
                 children: [
+                  if (unsolvedCount > 0)
+                    _buildBadge('미풀이 $unsolvedCount', AppColors.gray500),
+                  if (unsolvedCount > 0 && (fastCount > 0 || slowCount > 0))
+                    const SizedBox(width: 8),
                   if (fastCount > 0)
                     _buildBadge('빠름 $fastCount', AppColors.success),
                   if (fastCount > 0 && slowCount > 0) const SizedBox(width: 8),
@@ -191,15 +199,18 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
                 Divider(height: 1, color: AppColors.divider),
             itemBuilder: (context, index) {
               final sec = exam.questionSeconds[index];
-              final isSlow = sec > (avg * 1.5);
-              final isFast = sec < (avg * 0.7);
+              final isUnsolved = sec == 0;
+              final isSlow = !isUnsolved && (sec > (avg * 1.5));
+              final isFast = !isUnsolved && (sec < (avg * 0.7));
 
               return Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 12,
                 ),
-                color: isSlow
+                color: isUnsolved
+                    ? Colors.transparent
+                    : isSlow
                     ? AppColors.warningLight.withAlpha(100)
                     : isFast
                     ? AppColors.successLight.withAlpha(100)
@@ -210,7 +221,9 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
                       width: 32,
                       height: 32,
                       decoration: BoxDecoration(
-                        color: isSlow
+                        color: isUnsolved
+                            ? AppColors.gray100
+                            : isSlow
                             ? AppColors.warning.withAlpha(30)
                             : isFast
                             ? AppColors.success.withAlpha(30)
@@ -221,7 +234,9 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
                       child: Text(
                         '${index + 1}',
                         style: AppTypography.labelMedium.copyWith(
-                          color: isSlow
+                          color: isUnsolved
+                              ? AppColors.gray400
+                              : isSlow
                               ? AppColors.warning
                               : isFast
                               ? AppColors.success
@@ -232,9 +247,11 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
                     ),
                     const SizedBox(width: 16),
                     Text(
-                      formatSeconds(sec),
+                      isUnsolved ? '-' : formatSeconds(sec),
                       style: AppTypography.bodyLarge.copyWith(
-                        color: isSlow
+                        color: isUnsolved
+                            ? AppColors.textTertiary
+                            : isSlow
                             ? AppColors.warning
                             : isFast
                             ? AppColors.success
@@ -246,6 +263,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
                       ),
                     ),
                     const Spacer(),
+                    if (isUnsolved) _buildStatusChip('미풀이', AppColors.gray400),
                     if (isSlow) _buildStatusChip('지연', AppColors.warning),
                     if (isFast) _buildStatusChip('빠름', AppColors.success),
                   ],

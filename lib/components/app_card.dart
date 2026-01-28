@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:last_timer/utils/design_tokens.dart';
 
 enum AppCardVariant { elevated, outlined, flat }
@@ -16,7 +17,7 @@ class AppCard extends StatelessWidget {
   const AppCard({
     super.key,
     required this.child,
-    this.variant = AppCardVariant.outlined,
+    this.variant = AppCardVariant.elevated,
     this.backgroundColor,
     this.borderColor,
     this.padding,
@@ -33,11 +34,22 @@ class AppCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: backgroundColor ?? AppColors.surface,
         borderRadius: BorderRadius.circular(radius),
-        border: variant != AppCardVariant.flat
+        border: variant == AppCardVariant.outlined
             ? Border.all(color: borderColor ?? AppColors.border, width: 1)
-            : null,
+            : (variant == AppCardVariant.elevated
+                  ? Border.all(
+                      color: AppColors.gray100,
+                      width: 0.5,
+                    ) // 아주 흐릿한 경계선
+                  : null),
         boxShadow: variant == AppCardVariant.elevated
-            ? AppShadows.subtle
+            ? [
+                BoxShadow(
+                  color: Colors.black.withAlpha(12),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ]
             : null,
       ),
       child: Material(
@@ -179,7 +191,6 @@ class StatCard extends StatelessWidget {
   }
 }
 
-/// Exam history card - clean
 class ExamHistoryCard extends StatelessWidget {
   final String title;
   final int questionCount;
@@ -200,104 +211,92 @@ class ExamHistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Dismissible(
-      key: Key(title + totalTime),
-      direction: onDelete != null
-          ? DismissDirection.endToStart
-          : DismissDirection.none,
-      onDismissed: (_) => onDelete?.call(),
-      confirmDismiss: (_) async => true,
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              AppColors.error.withAlpha(0),
-              AppColors.error.withAlpha(230),
-            ],
-          ),
-          borderRadius: AppRadius.lgRadius,
+    if (onDelete == null) {
+      return _buildCardContent();
+    }
+
+    return Slidable(
+      key: ValueKey(title + totalTime),
+      // iOS 스타일의 끝까지 밀기 액션 설정
+      endActionPane: ActionPane(
+        motion: const BehindMotion(), // 뒤에서 버튼이 나타나는 자연스러운 효과
+        extentRatio: 0.25,
+        dismissible: DismissiblePane(
+          onDismissed: () => onDelete?.call(),
+          // threshold 대신 closeOnCancel 등을 활용하거나 기본값 유지
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.delete_outline, color: Colors.white, size: 20),
-            const SizedBox(width: 4),
-            Text(
-              '삭제',
-              style: AppTypography.labelMedium.copyWith(color: Colors.white),
-            ),
-          ],
-        ),
-      ),
-      child: Stack(
         children: [
-          AppCard(
-            onTap: onTap,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            child: Row(
+          CustomSlidableAction(
+            onPressed: (_) => onDelete?.call(),
+            backgroundColor: AppColors.error,
+            foregroundColor: Colors.white,
+            borderRadius: const BorderRadius.only(
+              topRight: Radius.circular(20),
+              bottomRight: Radius.circular(20),
+            ),
+            child: const Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: AppTypography.bodyLarge.copyWith(
-                          fontWeight: FontWeight.w500,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '$questionCount문항 · $totalTime',
-                        style: AppTypography.caption,
-                      ),
-                    ],
-                  ),
+                Icon(Icons.delete_rounded, size: 24),
+                SizedBox(height: 4),
+                Text(
+                  '삭제',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                 ),
-                Icon(Icons.chevron_right, color: AppColors.gray400, size: 18),
               ],
             ),
           ),
-          // 스와이프 힌트 (선택적)
-          if (showSwipeHint && onDelete != null)
+        ],
+      ),
+      child: Stack(
+        children: [
+          _buildCardContent(),
+          if (showSwipeHint)
             Positioned(
-              right: 8,
+              right: 12,
               top: 0,
               bottom: 0,
               child: Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.gray100,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.arrow_back_ios_rounded,
-                        size: 10,
-                        color: AppColors.textTertiary,
-                      ),
-                      Text(
-                        '스와이프',
-                        style: AppTypography.caption.copyWith(
-                          fontSize: 9,
-                          color: AppColors.textTertiary,
-                        ),
-                      ),
-                    ],
-                  ),
+                child: Icon(
+                  Icons.chevron_left_rounded,
+                  size: 20,
+                  color: AppColors.gray300.withAlpha(150),
                 ),
               ),
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCardContent() {
+    return AppCard(
+      onTap: onTap,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      borderRadius: 20,
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: AppTypography.bodyLarge.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '$questionCount문항 · $totalTime',
+                  style: AppTypography.caption,
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.chevron_right_rounded, color: AppColors.gray300, size: 20),
         ],
       ),
     );

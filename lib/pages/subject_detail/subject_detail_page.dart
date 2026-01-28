@@ -324,7 +324,7 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
                     child: Container(
                       height: 45 * heightFactor,
                       decoration: BoxDecoration(
-                        color: AppColors.gray800,
+                        color: AppColors.accent,
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -462,11 +462,11 @@ class _PremiumFABState extends State<_PremiumFAB>
           height: 52,
           margin: const EdgeInsets.symmetric(horizontal: 32),
           decoration: BoxDecoration(
-            color: AppColors.primary,
+            color: AppColors.accent,
             borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withAlpha(80),
+                color: AppColors.accent.withAlpha(80),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),

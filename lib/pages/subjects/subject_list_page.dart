@@ -16,13 +16,21 @@ class SubjectListPage extends GetView<SubjectController> {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('과목 목록'),
-          bottom: const TabBar(
-            tabs: [
+          title: const Text(
+            'MOMENTUM',
+            style: TextStyle(letterSpacing: 2.0, fontWeight: FontWeight.w800),
+          ),
+          bottom: TabBar(
+            tabs: const [
               Tab(text: '모의고사'),
               Tab(text: '일반공부'),
             ],
-            indicatorWeight: 3,
+            indicatorWeight: 2.5,
+            indicatorPadding: const EdgeInsets.symmetric(horizontal: 4),
+            indicator: UnderlineTabIndicator(
+              borderSide: const BorderSide(width: 3, color: AppColors.accent),
+              borderRadius: BorderRadius.circular(2),
+            ),
           ),
         ),
         body: Obx(() {
@@ -211,8 +219,8 @@ class _SubjectCardWithMeta extends StatelessWidget {
     return AppCard(
       onTap: onTap,
       onLongPress: onLongPress,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-      borderRadius: 16,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      borderRadius: 20, // 더 둥글게
       child: Row(
         children: [
           Expanded(
@@ -386,10 +394,10 @@ class _AddSubjectSheetState extends State<_AddSubjectSheet> {
           duration: AppDurations.fast,
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary : AppColors.gray50,
+            color: isSelected ? AppColors.accent : AppColors.gray50,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isSelected ? AppColors.primary : AppColors.border,
+              color: isSelected ? AppColors.accent : AppColors.border,
             ),
           ),
           child: Center(
@@ -618,11 +626,11 @@ class _PremiumFABState extends State<_PremiumFAB>
           height: 52,
           margin: const EdgeInsets.symmetric(horizontal: 32),
           decoration: BoxDecoration(
-            color: AppColors.primary,
+            color: AppColors.accent,
             borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withAlpha(80),
+                color: AppColors.accent.withAlpha(80),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),

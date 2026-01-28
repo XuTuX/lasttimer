@@ -149,7 +149,7 @@ class _TimerPageState extends State<TimerPage> with TickerProviderStateMixin {
           alignment: Alignment.centerLeft,
           widthFactor: progress.clamp(0.0, 1.0),
           child: Container(
-            color: progress > 0.9 ? AppColors.error : AppColors.textPrimary,
+            color: progress > 0.9 ? AppColors.error : AppColors.accent,
           ),
         ),
       );
@@ -619,11 +619,11 @@ class _PremiumSaveButtonState extends State<_PremiumSaveButton>
           width: double.infinity,
           height: 52,
           decoration: BoxDecoration(
-            color: AppColors.primary,
+            color: AppColors.accent,
             borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withAlpha(80),
+                color: AppColors.accent.withAlpha(80),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),

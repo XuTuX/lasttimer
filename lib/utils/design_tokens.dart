@@ -13,6 +13,11 @@ class AppColors {
   static const Color primaryLight = Color(0xFFF5F5F5);
   static const Color primaryDark = Color(0xFF000000);
 
+  // Accent - Emerald Green for 3% highlights (interactive elements)
+  static const Color accent = Color(0xFF10B981);
+  static const Color accentLight = Color(0xFFD1FAE5);
+  static const Color accentDark = Color(0xFF059669);
+
   // Neutrals - True grays
   static const Color gray50 = Color(0xFFFAFAFA);
   static const Color gray100 = Color(0xFFF5F5F5);
@@ -37,12 +42,12 @@ class AppColors {
   static const Color textOnPrimary = Color(0xFFFFFFFF);
 
   // Status - Muted tones
-  static const Color success = Color(0xFF2E7D32);
-  static const Color successLight = Color(0xFFE8F5E9);
-  static const Color warning = Color(0xFFED6C02);
-  static const Color warningLight = Color(0xFFFFF4E5);
-  static const Color error = Color(0xFFD32F2F);
-  static const Color errorLight = Color(0xFFFFEBEE);
+  static const Color success = accent;
+  static const Color successLight = accentLight;
+  static const Color warning = Color(0xFFF59E0B);
+  static const Color warningLight = Color(0xFFFEF3C7);
+  static const Color error = Color(0xFFEF4444);
+  static const Color errorLight = Color(0xFFFEE2E2);
 
   // Chart/Data colors (muted, monochrome-friendly)
   static const Color mint = Color(0xFF6B7B7B);

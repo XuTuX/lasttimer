@@ -6,7 +6,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: const ColorScheme.light(
-        primary: AppColors.primary,
+        primary: AppColors.accent,
         secondary: AppColors.gray600,
         surface: AppColors.surface,
         error: AppColors.error,
@@ -38,9 +38,9 @@ class AppTheme {
         ),
       ),
 
-      // FAB - Minimal black
+      // FAB - Minimal Emerald
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: AppColors.primary,
+        backgroundColor: AppColors.accent,
         foregroundColor: Colors.white,
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -48,18 +48,21 @@ class AppTheme {
         ),
       ),
 
-      // TabBar - 프리미엄 스타일
+      // TabBar - 프리미엄 & 미니멀 스타일
       tabBarTheme: TabBarThemeData(
-        labelColor: AppColors.primary,
+        labelColor: AppColors.accent,
         unselectedLabelColor: AppColors.textTertiary,
         labelStyle: AppTypography.labelLarge.copyWith(
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
+          fontSize: 15,
         ),
-        unselectedLabelStyle: AppTypography.labelMedium,
-        indicatorColor: AppColors.primary,
-        indicatorSize: TabBarIndicatorSize.tab,
-        dividerColor: Colors.transparent,
-        overlayColor: WidgetStateProperty.all(AppColors.gray100),
+        unselectedLabelStyle: AppTypography.labelMedium.copyWith(fontSize: 15),
+        indicatorColor: AppColors.accent,
+        indicatorSize: TabBarIndicatorSize.label, // 글자 길이에 맞게 강조
+        dividerColor: Colors.transparent, // 하단 구분선 제거
+        overlayColor: WidgetStateProperty.all(
+          Colors.transparent,
+        ), // 사각형 박스 배경 제거
       ),
 
       // Buttons - Clean
@@ -143,7 +146,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),

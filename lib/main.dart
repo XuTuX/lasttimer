@@ -27,7 +27,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'Timer Analysis',
+      title: 'Momentum',
       theme: AppTheme.lightTheme,
       debugShowCheckedModeBanner: false,
       initialRoute: Routes.subjectList,
