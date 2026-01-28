@@ -61,13 +61,14 @@ class AppEmptyState extends StatelessWidget {
 
 /// Preset empty states
 class EmptyStates {
-  static Widget subjects({VoidCallback? onAdd}) => AppEmptyState(
-    icon: Icons.folder_outlined,
-    title: '과목이 없습니다',
-    message: '과목을 추가해서 시작하세요',
-    actionLabel: '과목 추가',
-    onAction: onAdd,
-  );
+  static Widget subjects({VoidCallback? onAdd, String? message}) =>
+      AppEmptyState(
+        icon: Icons.folder_outlined,
+        title: message ?? '과목이 없습니다',
+        message: '과목을 추가해서 시작하세요',
+        actionLabel: '과목 추가',
+        onAction: onAdd,
+      );
 
   static Widget exams({VoidCallback? onStart}) => AppEmptyState(
     icon: Icons.history_outlined,

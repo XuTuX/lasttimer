@@ -23,4 +23,7 @@ class ExamDb {
   late DateTime finishedAt;
 
   late DateTime createdAt;
+
+  /// 메모 필드 (선택)
+  String? memo;
 }

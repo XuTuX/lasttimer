@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:isar/isar.dart';
 import 'package:last_timer/database/exam_db.dart';
 import 'package:last_timer/database/isar_service.dart';
+import 'package:last_timer/database/subject_db.dart';
 import 'package:last_timer/utils/stats.dart';
 
 class SubjectDetailController extends GetxController {
@@ -11,9 +12,10 @@ class SubjectDetailController extends GetxController {
   final int subjectId;
   SubjectDetailController(this.subjectId);
 
+  final subject = Rxn<SubjectDb>();
   final exams = <ExamDb>[].obs;
 
-  // Stats
+  // 공통 Stats
   final totalExams = 0.obs;
   final avgTotalSeconds = 0.0.obs;
   final avgRecent7Seconds = 0.0.obs;
@@ -21,12 +23,27 @@ class SubjectDetailController extends GetxController {
   final minTotalSeconds = 0.0.obs;
   final avgLapSeconds = 0.0.obs;
   final lapStdDev = 0.0.obs;
-  final stuckQuestions = <String>[].obs; // Format: "Exam X - Q# (Time)"
+
+  // 모의고사 전용 Stats
+  final topSlowQuestions = <MapEntry<int, double>>[].obs; // 상위 10% 느린 문항
+  final questionTrimmedMeans = <int, double>{}.obs; // 문항별 절사평균
+
+  // 일반공부 전용 Stats
+  final totalStudySeconds = 0.obs; // 총 공부 시간
+  final totalLapCount = 0.obs; // 총 문제 풀이 수
 
   @override
   void onInit() {
     super.onInit();
+    _loadSubject();
     _watchExams();
+  }
+
+  bool get isMock => subject.value?.isMock ?? false;
+  bool get isPractice => subject.value?.isPractice ?? true;
+
+  Future<void> _loadSubject() async {
+    subject.value = await _isarService.isar.subjectDbs.get(subjectId);
   }
 
   void _watchExams() {
@@ -45,10 +62,7 @@ class SubjectDetailController extends GetxController {
 
   void _calculateStats(List<ExamDb> data) {
     if (data.isEmpty) {
-      totalExams.value = 0;
-      avgTotalSeconds.value = 0;
-      maxTotalSeconds.value = 0;
-      minTotalSeconds.value = 0;
+      _resetStats();
       return;
     }
 
@@ -74,20 +88,57 @@ class SubjectDetailController extends GetxController {
     final stdDev = StatsUtils.calculateStdDev(allLaps);
     lapStdDev.value = stdDev;
 
-    // Stuck Questions (> Mean + 2*StdDev)
-    final threshold = avgLapSeconds.value + (2 * stdDev);
-    final stuck = <String>[];
-
-    // Check all exams for stuck questions
-    for (var i = 0; i < data.length; i++) {
-      final exam = data[i];
-      for (var q = 0; q < exam.questionSeconds.length; q++) {
-        if (exam.questionSeconds[q] > threshold && threshold > 0) {
-          stuck.add("${exam.title} - Q${q + 1} (${exam.questionSeconds[q]}s)");
-        }
-      }
+    // 타입별 계산
+    if (subject.value?.isMock ?? false) {
+      _calculateMockStats(data);
+    } else {
+      _calculatePracticeStats(data);
     }
-    stuckQuestions.value = stuck.take(5).toList(); // Top 5 recent stuck
+  }
+
+  /// 모의고사 전용 분석 지표 계산
+  void _calculateMockStats(List<ExamDb> data) {
+    // 문항별 시간 집계
+    final questionSecondsList = data.map((e) => e.questionSeconds).toList();
+    final aggregated = StatsUtils.aggregateQuestionTimes(questionSecondsList);
+
+    // 상위 10% 오래 걸린 문항
+    topSlowQuestions.value = StatsUtils.getTopSlowQuestions(
+      aggregated,
+      topPercent: 0.10,
+    );
+
+    // 문항별 절사 평균 (30%)
+    questionTrimmedMeans.value = StatsUtils.getQuestionTrimmedMeans(
+      aggregated,
+      trimPercent: 0.30,
+    );
+  }
+
+  /// 일반공부 전용 분석 지표 계산
+  void _calculatePracticeStats(List<ExamDb> data) {
+    // 총 공부 시간
+    totalStudySeconds.value = data.fold<int>(
+      0,
+      (sum, e) => sum + e.totalSeconds,
+    );
+
+    // 총 문제 풀이 수
+    totalLapCount.value = data.fold<int>(0, (sum, e) => sum + e.questionCount);
+  }
+
+  void _resetStats() {
+    totalExams.value = 0;
+    avgTotalSeconds.value = 0;
+    maxTotalSeconds.value = 0;
+    minTotalSeconds.value = 0;
+    avgRecent7Seconds.value = 0;
+    avgLapSeconds.value = 0;
+    lapStdDev.value = 0;
+    topSlowQuestions.clear();
+    questionTrimmedMeans.clear();
+    totalStudySeconds.value = 0;
+    totalLapCount.value = 0;
   }
 
   Future<void> deleteExam(int examId) async {

@@ -2,31 +2,66 @@ import 'dart:async';
 import 'package:get/get.dart';
 import 'package:last_timer/database/exam_db.dart';
 import 'package:last_timer/database/isar_service.dart';
+import 'package:last_timer/database/subject_db.dart';
 import 'package:last_timer/pages/subjects/subject_controller.dart';
 
 class TimerController extends GetxController {
   final IsarService _isarService = Get.find<IsarService>();
   final SubjectController _subjectController = Get.find<SubjectController>();
 
+  // 타이머 상태
   final timerElapsedSeconds = 0.obs;
   final isTimerRunning = false.obs;
   final laps = <int>[].obs;
   final isSaving = false.obs;
 
+  // 타이머 완료 (모의고사 카운트다운 종료)
+  final isTimerFinished = false.obs;
+
   Timer? _timer;
   int _lastLapTotalSeconds = 0;
   DateTime? _startedAt;
 
-  // Derived state for current lap time
+  // 현재 랩 시간
   int get currentLapSeconds => timerElapsedSeconds.value - _lastLapTotalSeconds;
+
+  /// 현재 선택된 과목
+  SubjectDb? get selectedSubject => _subjectController.selectedSubject;
+
+  /// 모의고사 모드인지
+  bool get isMockMode => selectedSubject?.isMock ?? false;
+
+  /// 모의고사 총 시간 (초)
+  int get mockTotalSeconds => selectedSubject?.mockTimeSeconds ?? 0;
+
+  /// 모의고사 문항 수
+  int get mockQuestionCount => selectedSubject?.mockQuestionCount ?? 0;
+
+  /// 모의고사 남은 시간 (카운트다운)
+  int get remainingSeconds {
+    if (!isMockMode) return 0;
+    return (mockTotalSeconds - timerElapsedSeconds.value).clamp(
+      0,
+      mockTotalSeconds,
+    );
+  }
+
+  /// 현재 문항 번호 (1부터 시작)
+  int get currentQuestionNumber => laps.length + 1;
 
   void startTimer() {
     if (isTimerRunning.value) return;
+    if (isTimerFinished.value) return; // 종료된 타이머는 재시작 불가
 
     _startedAt ??= DateTime.now();
     isTimerRunning.value = true;
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       timerElapsedSeconds.value++;
+
+      // 모의고사 카운트다운 체크
+      if (isMockMode && timerElapsedSeconds.value >= mockTotalSeconds) {
+        _onMockTimeUp();
+      }
     });
   }
 
@@ -35,18 +70,31 @@ class TimerController extends GetxController {
     _timer?.cancel();
   }
 
+  /// 모의고사 시간 종료 시 호출
+  void _onMockTimeUp() {
+    stopTimer();
+    isTimerFinished.value = true;
+    // 마지막 문항 기록
+    if (currentLapSeconds > 0) {
+      recordLap();
+    }
+  }
+
   void resetTimer() {
     stopTimer();
     timerElapsedSeconds.value = 0;
     laps.clear();
     _lastLapTotalSeconds = 0;
     _startedAt = null;
+    isTimerFinished.value = false;
   }
 
   void recordLap() {
     final lapTime = timerElapsedSeconds.value - _lastLapTotalSeconds;
-    laps.add(lapTime);
-    _lastLapTotalSeconds = timerElapsedSeconds.value;
+    if (lapTime > 0) {
+      laps.add(lapTime);
+      _lastLapTotalSeconds = timerElapsedSeconds.value;
+    }
   }
 
   Future<void> saveExam(String? titleInput) async {
@@ -61,6 +109,7 @@ class TimerController extends GetxController {
       return;
     }
 
+    // 마지막 문항 기록 (남아있으면)
     if (currentLapSeconds > 0) {
       recordLap();
     }
@@ -71,7 +120,7 @@ class TimerController extends GetxController {
     String title = titleInput?.trim() ?? "";
     if (title.isEmpty) {
       final dateStr = now.toString().substring(0, 10);
-      title = "$dateStr 시험";
+      title = "$dateStr ${isMockMode ? '모의고사' : '공부'}";
     }
 
     final newExam = ExamDb()
@@ -89,7 +138,7 @@ class TimerController extends GetxController {
       });
 
       Get.back();
-      Get.snackbar('성공', '시험 결과가 저장되었습니다.');
+      Get.snackbar('성공', '기록이 저장되었습니다.');
       resetTimer();
     } catch (e) {
       Get.snackbar('오류', '저장 실패: $e');

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:last_timer/database/isar_service.dart';
+import 'package:last_timer/pages/record_detail/record_detail_page.dart';
 import 'package:last_timer/pages/subject_detail/subject_detail_page.dart';
 import 'package:last_timer/pages/subjects/subject_controller.dart';
 import 'package:last_timer/pages/subjects/subject_list_page.dart';
@@ -37,6 +38,10 @@ class MyApp extends StatelessWidget {
           page: () => const SubjectDetailPage(),
         ),
         GetPage(name: Routes.timer, page: () => const TimerPage()),
+        GetPage(
+          name: Routes.recordDetail,
+          page: () => const RecordDetailPage(),
+        ),
       ],
     );
   }

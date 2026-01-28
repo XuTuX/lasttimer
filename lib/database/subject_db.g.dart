@@ -22,13 +22,39 @@ const SubjectDbSchema = CollectionSchema(
       name: r'createdAt',
       type: IsarType.dateTime,
     ),
-    r'subjectName': PropertySchema(
+    r'isMock': PropertySchema(
       id: 1,
+      name: r'isMock',
+      type: IsarType.bool,
+    ),
+    r'isPractice': PropertySchema(
+      id: 2,
+      name: r'isPractice',
+      type: IsarType.bool,
+    ),
+    r'mockQuestionCount': PropertySchema(
+      id: 3,
+      name: r'mockQuestionCount',
+      type: IsarType.long,
+    ),
+    r'mockTimeSeconds': PropertySchema(
+      id: 4,
+      name: r'mockTimeSeconds',
+      type: IsarType.long,
+    ),
+    r'subjectName': PropertySchema(
+      id: 5,
       name: r'subjectName',
       type: IsarType.string,
     ),
+    r'type': PropertySchema(
+      id: 6,
+      name: r'type',
+      type: IsarType.byte,
+      enumMap: _SubjectDbtypeEnumValueMap,
+    ),
     r'updatedAt': PropertySchema(
-      id: 2,
+      id: 7,
       name: r'updatedAt',
       type: IsarType.dateTime,
     )
@@ -78,8 +104,13 @@ void _subjectDbSerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeDateTime(offsets[0], object.createdAt);
-  writer.writeString(offsets[1], object.subjectName);
-  writer.writeDateTime(offsets[2], object.updatedAt);
+  writer.writeBool(offsets[1], object.isMock);
+  writer.writeBool(offsets[2], object.isPractice);
+  writer.writeLong(offsets[3], object.mockQuestionCount);
+  writer.writeLong(offsets[4], object.mockTimeSeconds);
+  writer.writeString(offsets[5], object.subjectName);
+  writer.writeByte(offsets[6], object.type.index);
+  writer.writeDateTime(offsets[7], object.updatedAt);
 }
 
 SubjectDb _subjectDbDeserialize(
@@ -91,8 +122,12 @@ SubjectDb _subjectDbDeserialize(
   final object = SubjectDb();
   object.createdAt = reader.readDateTime(offsets[0]);
   object.id = id;
-  object.subjectName = reader.readString(offsets[1]);
-  object.updatedAt = reader.readDateTime(offsets[2]);
+  object.mockQuestionCount = reader.readLongOrNull(offsets[3]);
+  object.mockTimeSeconds = reader.readLongOrNull(offsets[4]);
+  object.subjectName = reader.readString(offsets[5]);
+  object.type = _SubjectDbtypeValueEnumMap[reader.readByteOrNull(offsets[6])] ??
+      SubjectType.practice;
+  object.updatedAt = reader.readDateTime(offsets[7]);
   return object;
 }
 
@@ -106,13 +141,33 @@ P _subjectDbDeserializeProp<P>(
     case 0:
       return (reader.readDateTime(offset)) as P;
     case 1:
-      return (reader.readString(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 2:
+      return (reader.readBool(offset)) as P;
+    case 3:
+      return (reader.readLongOrNull(offset)) as P;
+    case 4:
+      return (reader.readLongOrNull(offset)) as P;
+    case 5:
+      return (reader.readString(offset)) as P;
+    case 6:
+      return (_SubjectDbtypeValueEnumMap[reader.readByteOrNull(offset)] ??
+          SubjectType.practice) as P;
+    case 7:
       return (reader.readDateTime(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
 }
+
+const _SubjectDbtypeEnumValueMap = {
+  'practice': 0,
+  'mock': 1,
+};
+const _SubjectDbtypeValueEnumMap = {
+  0: SubjectType.practice,
+  1: SubjectType.mock,
+};
 
 Id _subjectDbGetId(SubjectDb object) {
   return object.id;
@@ -412,6 +467,174 @@ extension SubjectDbQueryFilter
     });
   }
 
+  QueryBuilder<SubjectDb, SubjectDb, QAfterFilterCondition> isMockEqualTo(
+      bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isMock',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterFilterCondition> isPracticeEqualTo(
+      bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isPractice',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterFilterCondition>
+      mockQuestionCountIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'mockQuestionCount',
+      ));
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterFilterCondition>
+      mockQuestionCountIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'mockQuestionCount',
+      ));
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterFilterCondition>
+      mockQuestionCountEqualTo(int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'mockQuestionCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterFilterCondition>
+      mockQuestionCountGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'mockQuestionCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterFilterCondition>
+      mockQuestionCountLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'mockQuestionCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterFilterCondition>
+      mockQuestionCountBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'mockQuestionCount',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterFilterCondition>
+      mockTimeSecondsIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'mockTimeSeconds',
+      ));
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterFilterCondition>
+      mockTimeSecondsIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'mockTimeSeconds',
+      ));
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterFilterCondition>
+      mockTimeSecondsEqualTo(int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'mockTimeSeconds',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterFilterCondition>
+      mockTimeSecondsGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'mockTimeSeconds',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterFilterCondition>
+      mockTimeSecondsLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'mockTimeSeconds',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterFilterCondition>
+      mockTimeSecondsBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'mockTimeSeconds',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<SubjectDb, SubjectDb, QAfterFilterCondition> subjectNameEqualTo(
     String value, {
     bool caseSensitive = true,
@@ -546,6 +769,59 @@ extension SubjectDbQueryFilter
     });
   }
 
+  QueryBuilder<SubjectDb, SubjectDb, QAfterFilterCondition> typeEqualTo(
+      SubjectType value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'type',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterFilterCondition> typeGreaterThan(
+    SubjectType value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'type',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterFilterCondition> typeLessThan(
+    SubjectType value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'type',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterFilterCondition> typeBetween(
+    SubjectType lower,
+    SubjectType upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'type',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<SubjectDb, SubjectDb, QAfterFilterCondition> updatedAtEqualTo(
       DateTime value) {
     return QueryBuilder.apply(this, (query) {
@@ -620,6 +896,55 @@ extension SubjectDbQuerySortBy on QueryBuilder<SubjectDb, SubjectDb, QSortBy> {
     });
   }
 
+  QueryBuilder<SubjectDb, SubjectDb, QAfterSortBy> sortByIsMock() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isMock', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterSortBy> sortByIsMockDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isMock', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterSortBy> sortByIsPractice() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isPractice', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterSortBy> sortByIsPracticeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isPractice', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterSortBy> sortByMockQuestionCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'mockQuestionCount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterSortBy>
+      sortByMockQuestionCountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'mockQuestionCount', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterSortBy> sortByMockTimeSeconds() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'mockTimeSeconds', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterSortBy> sortByMockTimeSecondsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'mockTimeSeconds', Sort.desc);
+    });
+  }
+
   QueryBuilder<SubjectDb, SubjectDb, QAfterSortBy> sortBySubjectName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'subjectName', Sort.asc);
@@ -629,6 +954,18 @@ extension SubjectDbQuerySortBy on QueryBuilder<SubjectDb, SubjectDb, QSortBy> {
   QueryBuilder<SubjectDb, SubjectDb, QAfterSortBy> sortBySubjectNameDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'subjectName', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterSortBy> sortByType() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'type', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterSortBy> sortByTypeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'type', Sort.desc);
     });
   }
 
@@ -671,6 +1008,55 @@ extension SubjectDbQuerySortThenBy
     });
   }
 
+  QueryBuilder<SubjectDb, SubjectDb, QAfterSortBy> thenByIsMock() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isMock', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterSortBy> thenByIsMockDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isMock', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterSortBy> thenByIsPractice() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isPractice', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterSortBy> thenByIsPracticeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isPractice', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterSortBy> thenByMockQuestionCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'mockQuestionCount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterSortBy>
+      thenByMockQuestionCountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'mockQuestionCount', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterSortBy> thenByMockTimeSeconds() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'mockTimeSeconds', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterSortBy> thenByMockTimeSecondsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'mockTimeSeconds', Sort.desc);
+    });
+  }
+
   QueryBuilder<SubjectDb, SubjectDb, QAfterSortBy> thenBySubjectName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'subjectName', Sort.asc);
@@ -680,6 +1066,18 @@ extension SubjectDbQuerySortThenBy
   QueryBuilder<SubjectDb, SubjectDb, QAfterSortBy> thenBySubjectNameDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'subjectName', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterSortBy> thenByType() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'type', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterSortBy> thenByTypeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'type', Sort.desc);
     });
   }
 
@@ -704,10 +1102,40 @@ extension SubjectDbQueryWhereDistinct
     });
   }
 
+  QueryBuilder<SubjectDb, SubjectDb, QDistinct> distinctByIsMock() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isMock');
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QDistinct> distinctByIsPractice() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isPractice');
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QDistinct> distinctByMockQuestionCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'mockQuestionCount');
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QDistinct> distinctByMockTimeSeconds() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'mockTimeSeconds');
+    });
+  }
+
   QueryBuilder<SubjectDb, SubjectDb, QDistinct> distinctBySubjectName(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'subjectName', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QDistinct> distinctByType() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'type');
     });
   }
 
@@ -732,9 +1160,39 @@ extension SubjectDbQueryProperty
     });
   }
 
+  QueryBuilder<SubjectDb, bool, QQueryOperations> isMockProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isMock');
+    });
+  }
+
+  QueryBuilder<SubjectDb, bool, QQueryOperations> isPracticeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isPractice');
+    });
+  }
+
+  QueryBuilder<SubjectDb, int?, QQueryOperations> mockQuestionCountProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'mockQuestionCount');
+    });
+  }
+
+  QueryBuilder<SubjectDb, int?, QQueryOperations> mockTimeSecondsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'mockTimeSeconds');
+    });
+  }
+
   QueryBuilder<SubjectDb, String, QQueryOperations> subjectNameProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'subjectName');
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectType, QQueryOperations> typeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'type');
     });
   }
 

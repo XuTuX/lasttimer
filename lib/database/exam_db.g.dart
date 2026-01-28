@@ -27,33 +27,38 @@ const ExamDbSchema = CollectionSchema(
       name: r'finishedAt',
       type: IsarType.dateTime,
     ),
-    r'questionCount': PropertySchema(
+    r'memo': PropertySchema(
       id: 2,
+      name: r'memo',
+      type: IsarType.string,
+    ),
+    r'questionCount': PropertySchema(
+      id: 3,
       name: r'questionCount',
       type: IsarType.long,
     ),
     r'questionSeconds': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'questionSeconds',
       type: IsarType.longList,
     ),
     r'startedAt': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'startedAt',
       type: IsarType.dateTime,
     ),
     r'subjectId': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'subjectId',
       type: IsarType.long,
     ),
     r'title': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'title',
       type: IsarType.string,
     ),
     r'totalSeconds': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'totalSeconds',
       type: IsarType.long,
     )
@@ -105,6 +110,12 @@ int _examDbEstimateSize(
   Map<Type, List<int>> allOffsets,
 ) {
   var bytesCount = offsets.last;
+  {
+    final value = object.memo;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   bytesCount += 3 + object.questionSeconds.length * 8;
   bytesCount += 3 + object.title.length * 3;
   return bytesCount;
@@ -118,12 +129,13 @@ void _examDbSerialize(
 ) {
   writer.writeDateTime(offsets[0], object.createdAt);
   writer.writeDateTime(offsets[1], object.finishedAt);
-  writer.writeLong(offsets[2], object.questionCount);
-  writer.writeLongList(offsets[3], object.questionSeconds);
-  writer.writeDateTime(offsets[4], object.startedAt);
-  writer.writeLong(offsets[5], object.subjectId);
-  writer.writeString(offsets[6], object.title);
-  writer.writeLong(offsets[7], object.totalSeconds);
+  writer.writeString(offsets[2], object.memo);
+  writer.writeLong(offsets[3], object.questionCount);
+  writer.writeLongList(offsets[4], object.questionSeconds);
+  writer.writeDateTime(offsets[5], object.startedAt);
+  writer.writeLong(offsets[6], object.subjectId);
+  writer.writeString(offsets[7], object.title);
+  writer.writeLong(offsets[8], object.totalSeconds);
 }
 
 ExamDb _examDbDeserialize(
@@ -136,11 +148,12 @@ ExamDb _examDbDeserialize(
   object.createdAt = reader.readDateTime(offsets[0]);
   object.finishedAt = reader.readDateTime(offsets[1]);
   object.id = id;
-  object.questionSeconds = reader.readLongList(offsets[3]) ?? [];
-  object.startedAt = reader.readDateTime(offsets[4]);
-  object.subjectId = reader.readLong(offsets[5]);
-  object.title = reader.readString(offsets[6]);
-  object.totalSeconds = reader.readLong(offsets[7]);
+  object.memo = reader.readStringOrNull(offsets[2]);
+  object.questionSeconds = reader.readLongList(offsets[4]) ?? [];
+  object.startedAt = reader.readDateTime(offsets[5]);
+  object.subjectId = reader.readLong(offsets[6]);
+  object.title = reader.readString(offsets[7]);
+  object.totalSeconds = reader.readLong(offsets[8]);
   return object;
 }
 
@@ -156,16 +169,18 @@ P _examDbDeserializeProp<P>(
     case 1:
       return (reader.readDateTime(offset)) as P;
     case 2:
-      return (reader.readLong(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 3:
-      return (reader.readLongList(offset) ?? []) as P;
-    case 4:
-      return (reader.readDateTime(offset)) as P;
-    case 5:
       return (reader.readLong(offset)) as P;
+    case 4:
+      return (reader.readLongList(offset) ?? []) as P;
+    case 5:
+      return (reader.readDateTime(offset)) as P;
     case 6:
-      return (reader.readString(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 7:
+      return (reader.readString(offset)) as P;
+    case 8:
       return (reader.readLong(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -610,6 +625,151 @@ extension ExamDbQueryFilter on QueryBuilder<ExamDb, ExamDb, QFilterCondition> {
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<ExamDb, ExamDb, QAfterFilterCondition> memoIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'memo',
+      ));
+    });
+  }
+
+  QueryBuilder<ExamDb, ExamDb, QAfterFilterCondition> memoIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'memo',
+      ));
+    });
+  }
+
+  QueryBuilder<ExamDb, ExamDb, QAfterFilterCondition> memoEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'memo',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ExamDb, ExamDb, QAfterFilterCondition> memoGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'memo',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ExamDb, ExamDb, QAfterFilterCondition> memoLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'memo',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ExamDb, ExamDb, QAfterFilterCondition> memoBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'memo',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ExamDb, ExamDb, QAfterFilterCondition> memoStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'memo',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ExamDb, ExamDb, QAfterFilterCondition> memoEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'memo',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ExamDb, ExamDb, QAfterFilterCondition> memoContains(String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'memo',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ExamDb, ExamDb, QAfterFilterCondition> memoMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'memo',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ExamDb, ExamDb, QAfterFilterCondition> memoIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'memo',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<ExamDb, ExamDb, QAfterFilterCondition> memoIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'memo',
+        value: '',
       ));
     });
   }
@@ -1130,6 +1290,18 @@ extension ExamDbQuerySortBy on QueryBuilder<ExamDb, ExamDb, QSortBy> {
     });
   }
 
+  QueryBuilder<ExamDb, ExamDb, QAfterSortBy> sortByMemo() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'memo', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ExamDb, ExamDb, QAfterSortBy> sortByMemoDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'memo', Sort.desc);
+    });
+  }
+
   QueryBuilder<ExamDb, ExamDb, QAfterSortBy> sortByQuestionCount() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'questionCount', Sort.asc);
@@ -1228,6 +1400,18 @@ extension ExamDbQuerySortThenBy on QueryBuilder<ExamDb, ExamDb, QSortThenBy> {
     });
   }
 
+  QueryBuilder<ExamDb, ExamDb, QAfterSortBy> thenByMemo() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'memo', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ExamDb, ExamDb, QAfterSortBy> thenByMemoDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'memo', Sort.desc);
+    });
+  }
+
   QueryBuilder<ExamDb, ExamDb, QAfterSortBy> thenByQuestionCount() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'questionCount', Sort.asc);
@@ -1302,6 +1486,13 @@ extension ExamDbQueryWhereDistinct on QueryBuilder<ExamDb, ExamDb, QDistinct> {
     });
   }
 
+  QueryBuilder<ExamDb, ExamDb, QDistinct> distinctByMemo(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'memo', caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<ExamDb, ExamDb, QDistinct> distinctByQuestionCount() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'questionCount');
@@ -1356,6 +1547,12 @@ extension ExamDbQueryProperty on QueryBuilder<ExamDb, ExamDb, QQueryProperty> {
   QueryBuilder<ExamDb, DateTime, QQueryOperations> finishedAtProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'finishedAt');
+    });
+  }
+
+  QueryBuilder<ExamDb, String?, QQueryOperations> memoProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'memo');
     });
   }
 
