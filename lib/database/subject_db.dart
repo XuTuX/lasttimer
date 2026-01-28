@@ -4,7 +4,7 @@ part 'subject_db.g.dart';
 
 /// 과목 타입
 enum SubjectType {
-  practice, // 일반공부 (스톱워치)
+  practice, // 자율 학습 (스톱워치)
   mock, // 모의고사 (카운트다운)
 }
 
@@ -15,7 +15,7 @@ class SubjectDb {
   /// 과목명 - 단독 unique 제거, 복합 인덱스로 변경
   late String subjectName;
 
-  /// 과목 타입: 0 = practice (일반공부), 1 = mock (모의고사)
+  /// 과목 타입: 0 = practice (자율 학습), 1 = mock (모의고사)
   @enumerated
   SubjectType type = SubjectType.practice;
 
@@ -36,6 +36,6 @@ class SubjectDb {
   /// 모의고사 타입인지 확인
   bool get isMock => type == SubjectType.mock;
 
-  /// 일반공부 타입인지 확인
+  /// 자율 학습 타입인지 확인
   bool get isPractice => type == SubjectType.practice;
 }

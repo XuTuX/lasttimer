@@ -75,11 +75,11 @@ class SubjectController extends GetxController {
     });
   }
 
-  /// 일반공부 과목 추가
+  /// 자율 학습 과목 추가
   Future<void> addPracticeSubject(String name) async {
     // [이슈 1] 중복 체크
     if (isNameDuplicate(name, SubjectType.practice)) {
-      Get.snackbar('오류', '공부 탭에 이미 같은 이름의 과목이 있습니다.');
+      Get.snackbar('오류', '자율 학습 탭에 이미 같은 이름의 과목이 있습니다.');
       return;
     }
 

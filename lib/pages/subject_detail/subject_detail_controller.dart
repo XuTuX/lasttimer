@@ -28,7 +28,7 @@ class SubjectDetailController extends GetxController {
   final topSlowQuestions = <MapEntry<int, double>>[].obs; // 상위 10% 느린 문항
   final questionTrimmedMeans = <int, double>{}.obs; // 문항별 절사평균
 
-  // 일반공부 전용 Stats
+  // 자율 학습 전용 Stats
   final totalStudySeconds = 0.obs; // 총 공부 시간
   final totalLapCount = 0.obs; // 총 문제 풀이 수
 
@@ -115,7 +115,7 @@ class SubjectDetailController extends GetxController {
     );
   }
 
-  /// 일반공부 전용 분석 지표 계산
+  /// 자율 학습 전용 분석 지표 계산
   void _calculatePracticeStats(List<ExamDb> data) {
     // 총 공부 시간
     totalStudySeconds.value = data.fold<int>(

@@ -23,7 +23,7 @@ class SubjectListPage extends GetView<SubjectController> {
           bottom: TabBar(
             tabs: const [
               Tab(text: '모의고사'),
-              Tab(text: '일반공부'),
+              Tab(text: '자율 학습'),
             ],
             indicatorWeight: 2.5,
             indicatorPadding: const EdgeInsets.symmetric(horizontal: 4),
@@ -59,7 +59,7 @@ class SubjectListPage extends GetView<SubjectController> {
       // [이슈 2] Empty state 내부에서는 버튼 제거 (문구만 표시)
       return _AnimatedEmptyState(
         icon: isMock ? Icons.timer_outlined : Icons.book_outlined,
-        title: isMock ? '등록된 모의고사가 없습니다' : '등록된 공부 과목이 없습니다',
+        title: isMock ? '등록된 모의고사가 없습니다' : '등록된 과목이 없습니다',
         subtitle: '하단 버튼을 눌러 새 과목을 추가해보세요',
       );
     }
@@ -239,9 +239,7 @@ class _SubjectCardWithMeta extends StatelessWidget {
                   Text(
                     '${(subject.mockTimeSeconds ?? 0) ~/ 60}분 · ${subject.mockQuestionCount ?? 0}문항',
                     style: AppTypography.bodySmall,
-                  )
-                else
-                  const Text('일반공부 · 스톱워치', style: AppTypography.bodySmall),
+                  ),
               ],
             ),
           ),
@@ -326,7 +324,7 @@ class _AddSubjectSheetState extends State<_AddSubjectSheet> {
               children: [
                 _buildTypeTab('모의고사', SubjectType.mock),
                 const SizedBox(width: 12),
-                _buildTypeTab('일반공부', SubjectType.practice),
+                _buildTypeTab('자율 학습', SubjectType.practice),
               ],
             ),
             const SizedBox(height: 32),
