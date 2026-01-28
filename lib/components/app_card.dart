@@ -1,0 +1,230 @@
+import 'package:flutter/material.dart';
+import 'package:last_timer/utils/design_tokens.dart';
+
+enum AppCardVariant { elevated, outlined, flat }
+
+class AppCard extends StatelessWidget {
+  final Widget child;
+  final AppCardVariant variant;
+  final Color? backgroundColor;
+  final Color? borderColor;
+  final EdgeInsets? padding;
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
+  final double? borderRadius;
+
+  const AppCard({
+    super.key,
+    required this.child,
+    this.variant = AppCardVariant.outlined,
+    this.backgroundColor,
+    this.borderColor,
+    this.padding,
+    this.onTap,
+    this.onLongPress,
+    this.borderRadius,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = borderRadius ?? AppRadius.lg;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: backgroundColor ?? AppColors.surface,
+        borderRadius: BorderRadius.circular(radius),
+        border: variant != AppCardVariant.flat
+            ? Border.all(color: borderColor ?? AppColors.border, width: 1)
+            : null,
+        boxShadow: variant == AppCardVariant.elevated
+            ? AppShadows.subtle
+            : null,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(radius),
+        child: InkWell(
+          onTap: onTap,
+          onLongPress: onLongPress,
+          borderRadius: BorderRadius.circular(radius),
+          splashColor: AppColors.gray200.withAlpha(50),
+          highlightColor: AppColors.gray100.withAlpha(50),
+          child: Padding(
+            padding: padding ?? AppSpacing.cardPadding,
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Subject card - clean list style
+class SubjectCard extends StatelessWidget {
+  final String name;
+  final int index;
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
+  final int? examCount;
+
+  const SubjectCard({
+    super.key,
+    required this.name,
+    required this.index,
+    this.onTap,
+    this.onLongPress,
+    this.examCount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final accentColor = AppColors.accentByIndex(index);
+
+    return AppCard(
+      onTap: onTap,
+      onLongPress: onLongPress,
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        children: [
+          // Accent dot
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: accentColor,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 14),
+          // Content
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  name,
+                  style: AppTypography.bodyLarge.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (examCount != null) ...[
+                  const SizedBox(height: 2),
+                  Text('$examCount개의 기록', style: AppTypography.caption),
+                ],
+              ],
+            ),
+          ),
+          Icon(Icons.chevron_right, color: AppColors.gray400, size: 18),
+        ],
+      ),
+    );
+  }
+}
+
+/// Stat card - minimal
+class StatCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData? icon;
+  final Color? accentColor;
+
+  const StatCard({
+    super.key,
+    required this.label,
+    required this.value,
+    this.icon,
+    this.accentColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.gray50,
+        borderRadius: AppRadius.lgRadius,
+        border: Border.all(color: AppColors.border, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label, style: AppTypography.caption),
+          const SizedBox(height: 4),
+          Text(value, style: AppTypography.headlineSmall),
+        ],
+      ),
+    );
+  }
+}
+
+/// Exam history card - clean
+class ExamHistoryCard extends StatelessWidget {
+  final String title;
+  final int questionCount;
+  final String totalTime;
+  final VoidCallback? onTap;
+  final VoidCallback? onDelete;
+
+  const ExamHistoryCard({
+    super.key,
+    required this.title,
+    required this.questionCount,
+    required this.totalTime,
+    this.onTap,
+    this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Dismissible(
+      key: Key(title + totalTime),
+      direction: onDelete != null
+          ? DismissDirection.endToStart
+          : DismissDirection.none,
+      onDismissed: (_) => onDelete?.call(),
+      confirmDismiss: (_) async => true,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 16),
+        decoration: BoxDecoration(
+          color: AppColors.error,
+          borderRadius: AppRadius.lgRadius,
+        ),
+        child: const Icon(Icons.delete_outline, color: Colors.white, size: 20),
+      ),
+      child: AppCard(
+        onTap: onTap,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: AppTypography.bodyLarge.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '$questionCount문항 · $totalTime',
+                    style: AppTypography.caption,
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: AppColors.gray400, size: 18),
+          ],
+        ),
+      ),
+    );
+  }
+}
