@@ -83,19 +83,29 @@ class SubjectCard extends StatelessWidget {
     return AppCard(
       onTap: onTap,
       onLongPress: onLongPress,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         children: [
-          // Accent dot
+          // Icon Box - Inspired by the sample image
           Container(
-            width: 8,
-            height: 8,
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
-              color: accentColor,
-              shape: BoxShape.circle,
+              color: accentColor.withAlpha(20),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Center(
+              child: Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: accentColor,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 16),
           // Content
           Expanded(
             child: Column(
@@ -105,19 +115,27 @@ class SubjectCard extends StatelessWidget {
                 Text(
                   name,
                   style: AppTypography.bodyLarge.copyWith(
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.3,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 if (examCount != null) ...[
                   const SizedBox(height: 2),
-                  Text('$examCount개의 기록', style: AppTypography.caption),
+                  Text(
+                    '$examCount Exams recorded',
+                    style: AppTypography.caption.copyWith(fontSize: 11),
+                  ),
                 ],
               ],
             ),
           ),
-          Icon(Icons.chevron_right, color: AppColors.gray400, size: 18),
+          Icon(
+            Icons.arrow_forward_ios_rounded,
+            color: AppColors.gray300,
+            size: 14,
+          ),
         ],
       ),
     );

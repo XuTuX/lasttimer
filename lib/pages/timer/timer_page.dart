@@ -56,198 +56,156 @@ class TimerPage extends GetView<TimerController> {
         body: SafeArea(
           child: Column(
             children: [
-              // Timer area - tappable
+              // Timer area - tappable - Expanded to take most of the screen
               Expanded(
                 child: Obx(() {
                   final isRunning = controller.isTimerRunning.value;
 
                   return GestureDetector(
-                    onTap: isRunning
-                        ? () {
-                            HapticFeedback.lightImpact();
-                            controller.recordLap();
-                          }
-                        : null,
+                    onTap: () {
+                      if (isRunning) {
+                        HapticFeedback.lightImpact();
+                        controller.recordLap();
+                      } else {
+                        controller.startTimer();
+                      }
+                    },
                     behavior: HitTestBehavior.opaque,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Main time
-                        Obx(
-                          () => Text(
-                            formatSeconds(controller.timerElapsedSeconds.value),
-                            style: AppTypography.displayLarge,
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Current lap
-                        Obx(
-                          () => Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.gray100,
-                              borderRadius: AppRadius.fullRadius,
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  '문항 ${controller.laps.length + 1}',
-                                  style: AppTypography.bodySmall,
-                                ),
-                                const SizedBox(width: 10),
-                                Text(
-                                  formatSeconds(controller.currentLapSeconds),
-                                  style: AppTypography.labelLarge,
-                                ),
-                              ],
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Main time - Large and central
+                          Obx(
+                            () => Text(
+                              formatSeconds(
+                                controller.timerElapsedSeconds.value,
+                              ),
+                              style: AppTypography.displayLarge.copyWith(
+                                fontSize: 80,
+                                letterSpacing: -2,
+                                color: isRunning
+                                    ? AppColors.textPrimary
+                                    : AppColors.textTertiary,
+                              ),
                             ),
                           ),
-                        ),
 
-                        if (isRunning) ...[
-                          const SizedBox(height: 20),
-                          Text('화면을 탭하면 다음 문항', style: AppTypography.caption),
+                          const SizedBox(height: 12),
+
+                          // Current lap status badge
+                          Obx(
+                            () => Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.gray100.withAlpha(150),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    '문항 ${controller.laps.length + 1}',
+                                    style: AppTypography.bodySmall.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    formatSeconds(controller.currentLapSeconds),
+                                    style: AppTypography.labelLarge.copyWith(
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 32),
+
+                          // Interaction Guide
+                          AnimatedOpacity(
+                            opacity: isRunning ? 1.0 : 0.0,
+                            duration: const Duration(milliseconds: 300),
+                            child: Text(
+                              '화면을 탭하면 다음 문항',
+                              style: AppTypography.caption.copyWith(
+                                color: AppColors.textTertiary,
+                                letterSpacing: 0.2,
+                              ),
+                            ),
+                          ),
                         ],
-                      ],
+                      ),
                     ),
                   );
                 }),
               ),
 
-              // Recent laps
-              Obx(() {
-                if (controller.laps.isEmpty) return const SizedBox.shrink();
-
-                final recentLaps = controller.laps.length > 3
-                    ? controller.laps.sublist(controller.laps.length - 3)
-                    : controller.laps.toList();
-                final startIndex = controller.laps.length > 3
-                    ? controller.laps.length - 3
-                    : 0;
-
-                return Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 24),
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: AppColors.gray50,
-                    borderRadius: AppRadius.lgRadius,
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('최근 기록', style: AppTypography.labelMedium),
-                          GestureDetector(
-                            onTap: () => _showLapsSheet(context),
-                            child: Text(
-                              '전체 (${controller.laps.length})',
-                              style: AppTypography.caption.copyWith(
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      ...recentLaps.asMap().entries.map((entry) {
-                        final idx = startIndex + entry.key;
-                        final lap = entry.value;
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 3),
-                          child: Row(
-                            children: [
-                              Text('${idx + 1}', style: AppTypography.caption),
-                              const SizedBox(width: 12),
-                              Text(
-                                formatSeconds(lap),
-                                style: AppTypography.bodyMedium.copyWith(
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }),
-                    ],
-                  ),
-                );
-              }),
-
-              const SizedBox(height: 20),
-
-              // Controls
+              // Controls - Ultra minimal
               Padding(
-                padding: const EdgeInsets.fromLTRB(32, 0, 32, 32),
+                padding: const EdgeInsets.fromLTRB(48, 0, 48, 60),
                 child: Obx(() {
                   final isRunning = controller.isTimerRunning.value;
                   final hasTime = controller.timerElapsedSeconds.value > 0;
 
                   return Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Left: Lap or Reset
+                      // Reset (Only shown when paused and has time)
+                      if (!isRunning && hasTime) ...[
+                        _buildControlButton(
+                          icon: Icons.refresh_rounded,
+                          onPressed: controller.resetTimer,
+                          color: AppColors.gray500,
+                        ),
+                        const SizedBox(width: 32),
+                      ],
+
+                      // Play/Pause (Primary Action)
                       SizedBox(
-                        width: 60,
-                        child: hasTime
-                            ? AppIconButton(
-                                icon: isRunning
-                                    ? Icons.flag_outlined
-                                    : Icons.refresh,
-                                backgroundColor: AppColors.gray100,
-                                iconColor: AppColors.textSecondary,
-                                size: 48,
-                                iconSize: 20,
-                                showBorder: true,
-                                label: isRunning ? '랩' : '초기화',
-                                onPressed: isRunning
-                                    ? controller.recordLap
-                                    : controller.resetTimer,
-                              )
-                            : const SizedBox.shrink(),
+                        width: 88,
+                        height: 88,
+                        child: TextButton(
+                          onPressed: () {
+                            HapticFeedback.mediumImpact();
+                            isRunning
+                                ? controller.stopTimer()
+                                : controller.startTimer();
+                          },
+                          style: TextButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            shape: const CircleBorder(),
+                            elevation: 8,
+                            shadowColor: AppColors.primary.withAlpha(120),
+                          ),
+                          child: Icon(
+                            isRunning
+                                ? Icons.pause_rounded
+                                : Icons.play_arrow_rounded,
+                            size: 44,
+                          ),
+                        ),
                       ),
 
-                      // Center: Play/Pause
-                      AppIconButton(
-                        icon: isRunning ? Icons.pause : Icons.play_arrow,
-                        backgroundColor: AppColors.primary,
-                        iconColor: Colors.white,
-                        size: 64,
-                        iconSize: 28,
-                        onPressed: () {
-                          HapticFeedback.lightImpact();
-                          isRunning
-                              ? controller.stopTimer()
-                              : controller.startTimer();
-                        },
-                      ),
-
-                      // Right: Stop
-                      SizedBox(
-                        width: 60,
-                        child: hasTime
-                            ? AppIconButton(
-                                icon: Icons.stop,
-                                backgroundColor: AppColors.gray100,
-                                iconColor: AppColors.error,
-                                size: 48,
-                                iconSize: 20,
-                                showBorder: true,
-                                label: '종료',
-                                onPressed: () {
-                                  controller.stopTimer();
-                                  _showSaveDialog(context);
-                                },
-                              )
-                            : const SizedBox.shrink(),
-                      ),
+                      // Finish (Only shown when has time)
+                      if (hasTime) ...[
+                        const SizedBox(width: 32),
+                        _buildControlButton(
+                          icon: Icons.stop_rounded,
+                          onPressed: () {
+                            controller.stopTimer();
+                            _showSaveDialog(context);
+                          },
+                          color: AppColors.error,
+                          isOutlined: true,
+                        ),
+                      ],
                     ],
                   );
                 }),
@@ -256,6 +214,39 @@ class TimerPage extends GetView<TimerController> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildControlButton({
+    required IconData icon,
+    required VoidCallback onPressed,
+    required Color color,
+    bool isOutlined = false,
+  }) {
+    return SizedBox(
+      width: 60,
+      height: 60,
+      child: isOutlined
+          ? OutlinedButton(
+              onPressed: onPressed,
+              style: OutlinedButton.styleFrom(
+                padding: EdgeInsets.zero,
+                side: BorderSide(color: AppColors.border, width: 1.5),
+                shape: const CircleBorder(),
+                foregroundColor: color,
+              ),
+              child: Icon(icon, size: 24),
+            )
+          : TextButton(
+              onPressed: onPressed,
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                backgroundColor: AppColors.gray100,
+                shape: const CircleBorder(),
+                foregroundColor: color,
+              ),
+              child: Icon(icon, size: 24),
+            ),
     );
   }
 
@@ -280,41 +271,5 @@ class TimerPage extends GetView<TimerController> {
     if (title != null && title.isNotEmpty) {
       controller.saveExam(title);
     }
-  }
-
-  void _showLapsSheet(BuildContext context) {
-    AppBottomSheet.show(
-      title: '기록',
-      isScrollControlled: true,
-      maxHeight: MediaQuery.of(context).size.height * 0.6,
-      child: Obx(() {
-        if (controller.laps.isEmpty) {
-          return const Padding(
-            padding: EdgeInsets.all(32),
-            child: AppEmptyState(icon: Icons.flag_outlined, title: '기록이 없습니다'),
-          );
-        }
-
-        return ListView.builder(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-          itemCount: controller.laps.length,
-          itemBuilder: (context, index) {
-            final lapTime = controller.laps[index];
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 32,
-                    child: Text('${index + 1}', style: AppTypography.bodySmall),
-                  ),
-                  Text(formatSeconds(lapTime), style: AppTypography.bodyLarge),
-                ],
-              ),
-            );
-          },
-        );
-      }),
-    );
   }
 }

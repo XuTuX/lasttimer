@@ -43,12 +43,6 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
             _buildStatsSection(),
             const SizedBox(height: 24),
 
-            // Stuck questions
-            if (controller.stuckQuestions.isNotEmpty) ...[
-              _buildStuckQuestions(),
-              const SizedBox(height: 24),
-            ],
-
             // History header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -76,31 +70,36 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
               ),
             ),
 
-            const SizedBox(height: 80),
+            const SizedBox(height: 100), // Spacing for floating button
           ],
         );
       }),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-        decoration: BoxDecoration(
-          color: AppColors.background,
-          border: Border(top: BorderSide(color: AppColors.border)),
-        ),
-        child: SizedBox(
-          height: 48,
-          child: TextButton(
-            onPressed: () => Get.toNamed(Routes.timer),
-            style: TextButton.styleFrom(
-              backgroundColor: AppColors.gray900,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: Container(
+        height: 52,
+        margin: const EdgeInsets.symmetric(horizontal: 32),
+        child: ElevatedButton(
+          onPressed: () => Get.toNamed(Routes.timer),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.gray900,
+            foregroundColor: Colors.white,
+            elevation: 8,
+            shadowColor: Colors.black.withAlpha(80),
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.play_arrow_rounded, size: 20),
+              const SizedBox(width: 8),
+              const Text(
+                '새 시험 시작',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
               ),
-            ),
-            child: const Text(
-              '시험 시작',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-            ),
+            ],
           ),
         ),
       ),
@@ -111,102 +110,268 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('통계', style: AppTypography.headlineSmall),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: StatCard(
-                label: '시험 횟수',
-                value: '${controller.totalExams}회',
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: StatCard(
-                label: '평균 시간',
-                value: formatSeconds(controller.avgTotalSeconds.value.toInt()),
-              ),
-            ),
-          ],
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 12),
+          child: Text(
+            '분석 대시보드',
+            style: AppTypography.headlineMedium.copyWith(fontSize: 20),
+          ),
         ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: StatCard(
-                label: '최단 기록',
-                value: formatSeconds(controller.minTotalSeconds.value.toInt()),
+        // Unified Dashboard Card - Refined to look like a premium widget
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: AppColors.border.withAlpha(150)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(10),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
               ),
+            ],
+          ),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Left Side: Hero Stats & Trend Chart
+                Expanded(
+                  flex: 3,
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '평균 소요 시간',
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.textTertiary,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          formatSeconds(
+                            controller.avgTotalSeconds.value.toInt(),
+                          ),
+                          style: AppTypography.displayLarge.copyWith(
+                            fontSize: 36,
+                            height: 1.0,
+                            letterSpacing: -1,
+                          ),
+                        ),
+                        const Spacer(),
+                        const SizedBox(height: 24),
+                        // Mini Bar Chart with baseline
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '최근 성적 추이',
+                              style: AppTypography.caption.copyWith(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textTertiary,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              height: 60,
+                              child: Stack(
+                                alignment: Alignment.bottomCenter,
+                                children: [
+                                  // Chart Baseline
+                                  Container(
+                                    height: 1,
+                                    color: AppColors.divider,
+                                    margin: const EdgeInsets.only(bottom: 0),
+                                  ),
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: _buildMiniChart(),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Elegant Vertical Divider
+                Container(
+                  width: 1,
+                  margin: const EdgeInsets.symmetric(vertical: 24),
+                  color: AppColors.divider,
+                ),
+                // Right Side: Beautiful Metrics List
+                Expanded(
+                  flex: 2,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.gray50.withAlpha(100),
+                      borderRadius: const BorderRadius.only(
+                        topRight: Radius.circular(24),
+                        bottomRight: Radius.circular(24),
+                      ),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 24,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildMetricItem(
+                          Icons.assignment_rounded,
+                          AppColors.mint,
+                          '총 시험',
+                          '${controller.totalExams}회',
+                        ),
+                        const SizedBox(height: 20),
+                        _buildMetricItem(
+                          Icons.timer_rounded,
+                          AppColors.sky,
+                          '최단기록',
+                          formatSeconds(
+                            controller.minTotalSeconds.value.toInt(),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        _buildMetricItem(
+                          Icons.speed_rounded,
+                          AppColors.lavender,
+                          '문항평균',
+                          formatSeconds(controller.avgLapSeconds.value.toInt()),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: StatCard(
-                label: '문항당 평균',
-                value: formatSeconds(controller.avgLapSeconds.value.toInt()),
-              ),
-            ),
-          ],
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildStuckQuestions() {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.warningLight,
-        borderRadius: AppRadius.lgRadius,
-        border: Border.all(color: AppColors.warning.withAlpha(60)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.warning_amber_outlined,
-                color: AppColors.warning,
-                size: 18,
+  List<Widget> _buildMiniChart() {
+    const int maxSlots = 7;
+    final recentExams = controller.exams
+        .take(maxSlots)
+        .toList()
+        .reversed
+        .toList();
+
+    if (recentExams.isEmpty) {
+      return [
+        Expanded(
+          child: Center(
+            child: Text(
+              '기록이 없습니다',
+              style: AppTypography.caption.copyWith(
+                fontSize: 10,
+                color: AppColors.textTertiary,
               ),
-              const SizedBox(width: 8),
+            ),
+          ),
+        ),
+      ];
+    }
+
+    final maxVal = recentExams
+        .map((e) => e.totalSeconds)
+        .fold<int>(0, (prev, curr) => curr > prev ? curr : prev);
+
+    return List.generate(maxSlots, (index) {
+      final dataIndex = index - (maxSlots - recentExams.length);
+
+      if (dataIndex >= 0) {
+        final exam = recentExams[dataIndex];
+        // Ensure bars have a minimum visible height and don't touch the top
+        final heightFactor = (maxVal > 0)
+            ? (exam.totalSeconds / maxVal).clamp(0.2, 0.9)
+            : 0.2;
+
+        return Expanded(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Tooltip(
+                message: '${exam.title}\n${formatSeconds(exam.totalSeconds)}',
+                child: Container(
+                  width: 12, // More slender bars
+                  height: 50 * heightFactor,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        AppColors.primary,
+                        AppColors.primary.withAlpha(180),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+            ],
+          ),
+        );
+      } else {
+        return const Expanded(child: SizedBox.shrink());
+      }
+    });
+  }
+
+  Widget _buildMetricItem(
+    IconData icon,
+    Color color,
+    String label,
+    String value,
+  ) {
+    return Row(
+      children: [
+        // Colored Icon Container
+        Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: color.withAlpha(25),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, size: 16, color: color),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Text(
-                '시간이 오래 걸린 문항',
-                style: AppTypography.labelMedium.copyWith(
-                  color: AppColors.warning,
+                label,
+                style: AppTypography.caption.copyWith(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textTertiary,
+                ),
+              ),
+              Text(
+                value,
+                style: AppTypography.labelLarge.copyWith(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: controller.stuckQuestions
-                .map(
-                  (q) => Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.warning.withAlpha(30),
-                      borderRadius: AppRadius.xsRadius,
-                    ),
-                    child: Text(
-                      q,
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.warning,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                )
-                .toList(),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -241,7 +406,52 @@ class ExamDetailDialog extends StatelessWidget {
               '${exam.questionCount}문항 · ${formatSeconds(exam.totalSeconds)} · 평균 ${formatSeconds(avg.toInt())}',
               style: AppTypography.bodySmall,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
+
+            // Local Stuck Questions Summary Highlight
+            if (exam.questionSeconds.any((sec) => sec > (avg * 1.5))) ...[
+              Text(
+                '시간 지연 문항',
+                style: AppTypography.caption.copyWith(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: exam.questionSeconds
+                    .asMap()
+                    .entries
+                    .where((e) => e.value > (avg * 1.5))
+                    .map(
+                      (e) => Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.error.withAlpha(20),
+                          borderRadius: AppRadius.xsRadius,
+                          border: Border.all(
+                            color: AppColors.error.withAlpha(40),
+                          ),
+                        ),
+                        child: Text(
+                          '${e.key + 1}번',
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.error,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+              const SizedBox(height: 12),
+            ],
             const Divider(height: 1),
             const SizedBox(height: 12),
 
