@@ -200,6 +200,7 @@
 				97C146EB1CF9000F007C117D /* Frameworks */,
 				97C146EC1CF9000F007C117D /* Resources */,
 				9705A1C41CF9048500538489 /* Embed Frameworks */,
+				B7664452E3B94D0CAC457C00 /* Generate dSYM (objective_c) */,
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				E9E4FE7E84CF77A49BED1BFF /* [CP] Embed Pods Frameworks */,
 			);
@@ -303,6 +304,20 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" build";
+		};
+		B7664452E3B94D0CAC457C00 /* Generate dSYM (objective_c) */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Generate dSYM (objective_c)";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "FRAMEWORK=\"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/objective_c.framework/objective_c\"\nif [ -f \"$FRAMEWORK\" ]; then\n  DSYM_DIR=\"${DWARF_DSYM_FOLDER_PATH}/objective_c.framework.dSYM\"\n  /usr/bin/dsymutil \"$FRAMEWORK\" -o \"$DSYM_DIR\"\nfi\n";
 		};
 		9A369347EDD46929D6DFF616 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
