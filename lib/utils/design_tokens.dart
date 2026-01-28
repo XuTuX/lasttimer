@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 
 /// Design tokens for consistent styling across the app
-/// Modern, minimal aesthetic inspired by Notion/Linear
+/// Premium black & white minimal aesthetic
 
 // ============================================================================
-// COLORS - Clean and minimal palette
+// COLORS - Clean black & white palette
 // ============================================================================
 
 class AppColors {
-  // Primary - Warm coral as single accent
-  static const Color primary = Color(0xFFE8725A); // Warm coral
-  static const Color primaryLight = Color(0xFFFDF0ED);
-  static const Color primaryDark = Color(0xFFD15A42);
+  // Primary - Charcoal/Black as main accent
+  static const Color primary = Color(0xFF1A1A1A);
+  static const Color primaryLight = Color(0xFFF5F5F5);
+  static const Color primaryDark = Color(0xFF000000);
 
-  // Neutrals - True grays, no tint
+  // Neutrals - True grays
   static const Color gray50 = Color(0xFFFAFAFA);
   static const Color gray100 = Color(0xFFF5F5F5);
   static const Color gray200 = Color(0xFFEEEEEE);
@@ -28,7 +28,7 @@ class AppColors {
   // Semantic
   static const Color background = Color(0xFFFFFFFF);
   static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceVariant = Color(0xFFF8F8F8);
+  static const Color surfaceVariant = Color(0xFFFAFAFA);
 
   // Text
   static const Color textPrimary = Color(0xFF1A1A1A);
@@ -36,19 +36,19 @@ class AppColors {
   static const Color textTertiary = Color(0xFFA0A0A0);
   static const Color textOnPrimary = Color(0xFFFFFFFF);
 
-  // Status
-  static const Color success = Color(0xFF34A853);
+  // Status - Muted tones
+  static const Color success = Color(0xFF2E7D32);
   static const Color successLight = Color(0xFFE8F5E9);
-  static const Color warning = Color(0xFFF9A825);
-  static const Color warningLight = Color(0xFFFFF8E1);
-  static const Color error = Color(0xFFEA4335);
+  static const Color warning = Color(0xFFED6C02);
+  static const Color warningLight = Color(0xFFFFF4E5);
+  static const Color error = Color(0xFFD32F2F);
   static const Color errorLight = Color(0xFFFFEBEE);
 
-  // Chart/Data colors (muted)
-  static const Color mint = Color(0xFF81C9C9);
-  static const Color sky = Color(0xFF7EB6D8);
-  static const Color lavender = Color(0xFFA78BBA);
-  static const Color lemon = Color(0xFFD4C456);
+  // Chart/Data colors (muted, monochrome-friendly)
+  static const Color mint = Color(0xFF6B7B7B);
+  static const Color sky = Color(0xFF5C6B7A);
+  static const Color lavender = Color(0xFF7B6B8A);
+  static const Color lemon = Color(0xFF8A8B6B);
 
   // Utility
   static const Color divider = Color(0xFFEEEEEE);
@@ -56,20 +56,14 @@ class AppColors {
   static const Color overlay = Color(0x1A000000);
   static const Color border = Color(0xFFE5E5E5);
 
-  /// Get accent color by index (for subject cards)
+  /// Get accent color by index (for subject cards) - monochrome palette
   static Color accentByIndex(int index) {
-    const accents = [primary, mint, sky, lavender, lemon];
+    const accents = [gray800, gray600, gray700, gray500, gray900];
     return accents[index % accents.length];
   }
 
   static Color accentLightByIndex(int index) {
-    const accents = [
-      primaryLight,
-      Color(0xFFE8F6F6),
-      Color(0xFFEBF4F9),
-      Color(0xFFF3EFF6),
-      Color(0xFFFBF9E8),
-    ];
+    const accents = [gray100, gray50, gray100, gray50, gray200];
     return accents[index % accents.length];
   }
 }
@@ -82,7 +76,7 @@ class AppTypography {
   // Display - Timer numbers
   static const TextStyle displayLarge = TextStyle(
     fontSize: 64,
-    fontWeight: FontWeight.w600,
+    fontWeight: FontWeight.w300,
     letterSpacing: -2,
     color: AppColors.textPrimary,
     fontFeatures: [FontFeature.tabularFigures()],
@@ -90,7 +84,7 @@ class AppTypography {
 
   static const TextStyle displayMedium = TextStyle(
     fontSize: 40,
-    fontWeight: FontWeight.w600,
+    fontWeight: FontWeight.w300,
     letterSpacing: -1,
     color: AppColors.textPrimary,
     fontFeatures: [FontFeature.tabularFigures()],
@@ -205,7 +199,7 @@ class AppSpacing {
 }
 
 // ============================================================================
-// BORDER RADIUS - More subtle
+// BORDER RADIUS - Consistent
 // ============================================================================
 
 class AppRadius {

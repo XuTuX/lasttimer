@@ -5,10 +5,9 @@ class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primary,
+      colorScheme: const ColorScheme.light(
         primary: AppColors.primary,
-        secondary: AppColors.gray200,
+        secondary: AppColors.gray600,
         surface: AppColors.surface,
         error: AppColors.error,
       ),
@@ -29,7 +28,7 @@ class AppTheme {
         iconTheme: IconThemeData(color: AppColors.textPrimary, size: 22),
       ),
 
-      // Cards - Subtle border, no excessive shadow
+      // Cards - Subtle border, no shadow
       cardTheme: CardThemeData(
         elevation: 0,
         color: AppColors.surface,
@@ -39,11 +38,11 @@ class AppTheme {
         ),
       ),
 
-      // FAB - More subtle
+      // FAB - Minimal black
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
-        elevation: 2,
+        elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
@@ -178,7 +177,7 @@ class AppTheme {
 
       // Snackbar
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: AppColors.gray800,
+        backgroundColor: AppColors.gray900,
         contentTextStyle: AppTypography.bodyMedium.copyWith(
           color: Colors.white,
         ),

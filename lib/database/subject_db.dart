@@ -12,12 +12,16 @@ enum SubjectType {
 class SubjectDb {
   Id id = Isar.autoIncrement;
 
-  @Index(unique: true, caseSensitive: false)
+  /// 과목명 - 단독 unique 제거, 복합 인덱스로 변경
   late String subjectName;
 
   /// 과목 타입: 0 = practice (일반공부), 1 = mock (모의고사)
   @enumerated
   SubjectType type = SubjectType.practice;
+
+  /// 복합 인덱스: type + subjectName 조합으로 unique
+  @Index(unique: true, composite: [CompositeIndex('subjectName')])
+  int get typeIndex => type.index;
 
   /// 모의고사 전용: 총 시간 (초)
   int? mockTimeSeconds;

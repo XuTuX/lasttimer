@@ -34,8 +34,31 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
         title: Obx(() => Text(controller.subject.value?.subjectName ?? '분석')),
       ),
       body: Obx(() {
-        if (controller.exams.isEmpty) {
-          return EmptyStates.exams(onStart: () => Get.toNamed(Routes.timer));
+        final hasExams = controller.exams.isNotEmpty;
+
+        if (!hasExams) {
+          // [이슈 2] Empty state에는 버튼 없음 - 하단 고정 CTA 사용
+          return Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.history_outlined,
+                  size: 48,
+                  color: AppColors.gray400,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  '기록이 없습니다',
+                  style: AppTypography.bodyLarge.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text('시작 버튼을 눌러 첫 기록을 남겨보세요', style: AppTypography.bodySmall),
+              ],
+            ),
+          );
         }
 
         return ListView(
@@ -58,7 +81,7 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
             ),
             const SizedBox(height: 12),
 
-            // Exam list - dialog 대신 페이지 전환
+            // Exam list
             ...controller.exams.map(
               (exam) => Padding(
                 padding: const EdgeInsets.only(bottom: 8),
@@ -72,10 +95,11 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
               ),
             ),
 
-            const SizedBox(height: 100), // Spacing for floating button
+            const SizedBox(height: 100),
           ],
         );
       }),
+      // [이슈 2] 하단 고정 CTA - 항상 표시
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: Container(
         height: 52,
@@ -83,13 +107,12 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
         child: ElevatedButton(
           onPressed: () => Get.toNamed(Routes.timer),
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.gray900,
+            backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
-            elevation: 8,
-            shadowColor: Colors.black.withAlpha(80),
+            elevation: 0,
             padding: const EdgeInsets.symmetric(horizontal: 32),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(12),
             ),
           ),
           child: Row(
@@ -116,7 +139,6 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
     );
   }
 
-  /// 기록 상세 페이지로 이동 (dialog 대신)
   void _goToRecordDetail(ExamDb exam) {
     Get.toNamed(Routes.recordDetail, arguments: exam.id);
   }
@@ -128,11 +150,10 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 12),
           child: Text(
-            '분석 대시보드',
+            '분석',
             style: AppTypography.headlineMedium.copyWith(fontSize: 20),
           ),
         ),
-        // 타입별 대시보드
         Obx(
           () => controller.isMock
               ? _buildMockDashboard()
@@ -142,146 +163,106 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
     );
   }
 
-  /// 모의고사 분석 대시보드
   Widget _buildMockDashboard() {
-    return Column(
-      children: [
-        // Main Stats Card
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.border.withAlpha(150)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(8),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Left Side: Hero Stats
-                Expanded(
-                  flex: 3,
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '평균 소요 시간',
-                          style: AppTypography.caption.copyWith(
-                            color: AppColors.textTertiary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          formatSeconds(
-                            controller.avgTotalSeconds.value.toInt(),
-                          ),
-                          style: AppTypography.displayLarge.copyWith(
-                            fontSize: 32,
-                            height: 1.0,
-                            letterSpacing: -1,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        // Mini Bar Chart
-                        _buildMiniChart(),
-                      ],
-                    ),
-                  ),
-                ),
-                // Divider
-                Container(
-                  width: 1,
-                  margin: const EdgeInsets.symmetric(vertical: 20),
-                  color: AppColors.divider,
-                ),
-                // Right Side: Metrics
-                Expanded(
-                  flex: 2,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.gray50.withAlpha(100),
-                      borderRadius: const BorderRadius.only(
-                        topRight: Radius.circular(20),
-                        bottomRight: Radius.circular(20),
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              flex: 3,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '평균 소요 시간',
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.textTertiary,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 20,
+                    const SizedBox(height: 6),
+                    Text(
+                      formatSeconds(controller.avgTotalSeconds.value.toInt()),
+                      style: AppTypography.displayLarge.copyWith(
+                        fontSize: 32,
+                        height: 1.0,
+                        letterSpacing: -1,
+                      ),
                     ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildMetricItem(
-                          Icons.assignment_rounded,
-                          AppColors.mint,
-                          '총 시험',
-                          '${controller.totalExams}회',
-                        ),
-                        const SizedBox(height: 16),
-                        _buildMetricItem(
-                          Icons.timer_rounded,
-                          AppColors.sky,
-                          '최단기록',
-                          formatSeconds(
-                            controller.minTotalSeconds.value.toInt(),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        _buildMetricItem(
-                          Icons.speed_rounded,
-                          AppColors.lavender,
-                          '문항평균',
-                          formatSeconds(controller.avgLapSeconds.value.toInt()),
-                        ),
-                      ],
-                    ),
+                    const SizedBox(height: 20),
+                    _buildMiniChart(),
+                  ],
+                ),
+              ),
+            ),
+            Container(
+              width: 1,
+              margin: const EdgeInsets.symmetric(vertical: 20),
+              color: AppColors.divider,
+            ),
+            Expanded(
+              flex: 2,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.gray50,
+                  borderRadius: const BorderRadius.only(
+                    topRight: Radius.circular(16),
+                    bottomRight: Radius.circular(16),
                   ),
                 ),
-              ],
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 20,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildMetricItem(
+                      Icons.assignment_rounded,
+                      '총 시험',
+                      '${controller.totalExams}회',
+                    ),
+                    const SizedBox(height: 16),
+                    _buildMetricItem(
+                      Icons.timer_rounded,
+                      '최단기록',
+                      formatSeconds(controller.minTotalSeconds.value.toInt()),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildMetricItem(
+                      Icons.speed_rounded,
+                      '문항평균',
+                      formatSeconds(controller.avgLapSeconds.value.toInt()),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
+          ],
         ),
-        const SizedBox(height: 16),
-
-        // 상위 10% 오래 걸린 문항
-        if (controller.topSlowQuestions.isNotEmpty) ...[
-          _buildSlowQuestionsCard(),
-          const SizedBox(height: 16),
-        ],
-      ],
+      ),
     );
   }
 
-  /// 일반공부 분석 대시보드
   Widget _buildPracticeDashboard() {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border.withAlpha(150)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(8),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
       ),
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 총 공부 시간
           Text(
             '총 공부 시간',
             style: AppTypography.caption.copyWith(
@@ -301,63 +282,35 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
           const SizedBox(height: 24),
           const Divider(height: 1),
           const SizedBox(height: 20),
-
-          // 지표들
           Row(
             children: [
               Expanded(
-                child: _buildStatColumn(
-                  '총 세션',
-                  '${controller.totalExams}회',
-                  Icons.library_books_outlined,
-                  AppColors.mint,
-                ),
+                child: _buildStatColumn('총 세션', '${controller.totalExams}회'),
               ),
               Expanded(
                 child: _buildStatColumn(
                   '문제 풀이',
                   '${controller.totalLapCount}문항',
-                  Icons.check_circle_outline,
-                  AppColors.sky,
                 ),
               ),
               Expanded(
                 child: _buildStatColumn(
                   '문항 평균',
                   formatSeconds(controller.avgLapSeconds.value.toInt()),
-                  Icons.timer_outlined,
-                  AppColors.lavender,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 20),
-
-          // 최근 성적 추이
           _buildMiniChart(),
         ],
       ),
     );
   }
 
-  Widget _buildStatColumn(
-    String label,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
+  Widget _buildStatColumn(String label, String value) {
     return Column(
       children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: color.withAlpha(20),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, size: 20, color: color),
-        ),
-        const SizedBox(height: 8),
         Text(
           value,
           style: AppTypography.labelLarge.copyWith(fontWeight: FontWeight.w700),
@@ -365,76 +318,6 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
         const SizedBox(height: 2),
         Text(label, style: AppTypography.caption.copyWith(fontSize: 10)),
       ],
-    );
-  }
-
-  Widget _buildSlowQuestionsCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.warningLight.withAlpha(100),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.warning.withAlpha(40)),
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.warning_amber_rounded,
-                color: AppColors.warning,
-                size: 18,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '상위 10% 오래 걸린 문항',
-                style: AppTypography.labelMedium.copyWith(
-                  color: AppColors.warning,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: controller.topSlowQuestions.map((entry) {
-              return Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.warning.withAlpha(60)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '${entry.key}번',
-                      style: AppTypography.labelMedium.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.warning,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      formatSeconds(entry.value.toInt()),
-                      style: AppTypography.bodySmall.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-          ),
-        ],
-      ),
     );
   }
 
@@ -446,9 +329,7 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
         .reversed
         .toList();
 
-    if (recentExams.isEmpty) {
-      return const SizedBox.shrink();
-    }
+    if (recentExams.isEmpty) return const SizedBox.shrink();
 
     final maxVal = recentExams
         .map((e) => e.totalSeconds)
@@ -472,39 +353,25 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: List.generate(maxSlots, (index) {
               final dataIndex = index - (maxSlots - recentExams.length);
-
               if (dataIndex >= 0) {
                 final exam = recentExams[dataIndex];
                 final heightFactor = (maxVal > 0)
                     ? (exam.totalSeconds / maxVal).clamp(0.2, 0.95)
                     : 0.2;
-
                 return Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 2),
-                    child: Tooltip(
-                      message:
-                          '${exam.title}\n${formatSeconds(exam.totalSeconds)}',
-                      child: Container(
-                        height: 45 * heightFactor,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              AppColors.primary,
-                              AppColors.primary.withAlpha(150),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
+                    child: Container(
+                      height: 45 * heightFactor,
+                      decoration: BoxDecoration(
+                        color: AppColors.gray800,
+                        borderRadius: BorderRadius.circular(4),
                       ),
                     ),
                   ),
                 );
-              } else {
-                return const Expanded(child: SizedBox.shrink());
               }
+              return const Expanded(child: SizedBox.shrink());
             }),
           ),
         ),
@@ -512,22 +379,17 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
     );
   }
 
-  Widget _buildMetricItem(
-    IconData icon,
-    Color color,
-    String label,
-    String value,
-  ) {
+  Widget _buildMetricItem(IconData icon, String label, String value) {
     return Row(
       children: [
         Container(
           width: 28,
           height: 28,
           decoration: BoxDecoration(
-            color: color.withAlpha(25),
+            color: AppColors.gray200,
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, size: 14, color: color),
+          child: Icon(icon, size: 14, color: AppColors.gray700),
         ),
         const SizedBox(width: 10),
         Expanded(
@@ -557,7 +419,6 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
     );
   }
 
-  /// 긴 시간 포맷 (시:분:초 또는 시간분)
   String _formatLongDuration(int totalSeconds) {
     final hours = totalSeconds ~/ 3600;
     final minutes = (totalSeconds % 3600) ~/ 60;

@@ -15,58 +15,89 @@ class SubjectListPage extends GetView<SubjectController> {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('과목'),
-          bottom: TabBar(
-            onTap: (index) => controller.selectedTabIndex.value = index,
-            tabs: const [
+          title: const Text('과목 목록'),
+          bottom: const TabBar(
+            tabs: [
               Tab(text: '모의고사'),
-              Tab(text: '공부'),
+              Tab(text: '일반공부'),
             ],
             labelStyle: AppTypography.labelLarge,
-            unselectedLabelStyle: AppTypography.bodyMedium,
-            labelColor: AppColors.textPrimary,
-            unselectedLabelColor: AppColors.textTertiary,
+            unselectedLabelStyle: AppTypography.labelMedium,
             indicatorColor: AppColors.primary,
-            indicatorWeight: 2,
-            indicatorSize: TabBarIndicatorSize.label,
+            indicatorWeight: 3,
+            indicatorSize: TabBarIndicatorSize.tab,
+            labelColor: AppColors.primary,
+            unselectedLabelColor: AppColors.textTertiary,
           ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.add, size: 22),
-              onPressed: () => _showAddDialog(context),
-            ),
-            const SizedBox(width: 4),
-          ],
         ),
         body: Obx(() {
           return TabBarView(
             children: [
-              // 모의고사 탭
               _buildSubjectList(controller.mockSubjects, isMock: true),
-              // 일반공부 탭
               _buildSubjectList(controller.practiceSubjects, isMock: false),
             ],
           );
         }),
+        // [이슈 2] 하단 고정 CTA - Empty State 유무와 상관없이 고정 노출 (중복 제거)
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+        floatingActionButton: Container(
+          height: 52,
+          margin: const EdgeInsets.symmetric(horizontal: 32),
+          child: ElevatedButton(
+            onPressed: () => _showAddDialog(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              elevation: 4,
+              shadowColor: Colors.black.withAlpha(50),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.add_rounded, size: 20),
+                SizedBox(width: 8),
+                Text('새 과목 추가', style: TextStyle(fontWeight: FontWeight.w600)),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildSubjectList(List<SubjectDb> subjects, {required bool isMock}) {
     if (subjects.isEmpty) {
-      return EmptyStates.subjects(
-        onAdd: () => _showAddDialog(
-          Get.context!,
-          forceType: isMock ? SubjectType.mock : SubjectType.practice,
+      // [이슈 2] Empty state 내부에서는 버튼 제거 (문구만 표시)
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isMock ? Icons.timer_outlined : Icons.book_outlined,
+              size: 48,
+              color: AppColors.gray300,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              isMock ? '등록된 모의고사가 없습니다' : '등록된 공부 과목이 없습니다',
+              style: AppTypography.bodyLarge.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text('하단 버튼을 눌러 새 과목을 추가해보세요', style: AppTypography.bodySmall),
+          ],
         ),
-        message: isMock ? '모의고사 과목이 없습니다' : '공부 과목이 없습니다',
       );
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100), // FAB 공간 확보
       itemCount: subjects.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 8),
+      separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final subject = subjects[index];
         return _SubjectCardWithMeta(
@@ -87,12 +118,18 @@ class SubjectListPage extends GetView<SubjectController> {
     );
   }
 
-  void _showAddDialog(BuildContext context, {SubjectType? forceType}) async {
+  void _showAddDialog(BuildContext context) async {
+    // TabController를 통해 현재 탭의 타입을 기본값으로 설정
+    final tabController = DefaultTabController.of(context);
+    final initialType = tabController.index == 0
+        ? SubjectType.mock
+        : SubjectType.practice;
+
     final result = await showModalBottomSheet<_AddSubjectResult>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _AddSubjectSheet(forceType: forceType),
+      builder: (context) => _AddSubjectSheet(initialType: initialType),
     );
 
     if (result != null) {
@@ -194,7 +231,6 @@ class SubjectListPage extends GetView<SubjectController> {
   }
 }
 
-/// 과목 카드 (메타 정보 포함)
 class _SubjectCardWithMeta extends StatelessWidget {
   final SubjectDb subject;
   final int index;
@@ -210,32 +246,13 @@ class _SubjectCardWithMeta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accentColor = AppColors.accentByIndex(index);
-
     return AppCard(
       onTap: onTap,
       onLongPress: onLongPress,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      borderRadius: 16,
       child: Row(
         children: [
-          // Icon Box
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: accentColor.withAlpha(20),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Center(
-              child: Icon(
-                subject.isMock ? Icons.timer_outlined : Icons.book_outlined,
-                color: accentColor,
-                size: 20,
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          // Content
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -243,24 +260,18 @@ class _SubjectCardWithMeta extends StatelessWidget {
               children: [
                 Text(
                   subject.subjectName,
-                  style: AppTypography.bodyLarge.copyWith(
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: -0.3,
-                  ),
+                  style: AppTypography.headlineMedium.copyWith(fontSize: 18),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 if (subject.isMock)
                   Text(
                     '${(subject.mockTimeSeconds ?? 0) ~/ 60}분 · ${subject.mockQuestionCount ?? 0}문항',
-                    style: AppTypography.caption.copyWith(fontSize: 11),
+                    style: AppTypography.bodySmall,
                   )
                 else
-                  Text(
-                    '스톱워치 모드',
-                    style: AppTypography.caption.copyWith(fontSize: 11),
-                  ),
+                  const Text('일반공부 · 스톱워치', style: AppTypography.bodySmall),
               ],
             ),
           ),
@@ -275,7 +286,6 @@ class _SubjectCardWithMeta extends StatelessWidget {
   }
 }
 
-/// 과목 추가 결과
 class _AddSubjectResult {
   final String name;
   final SubjectType type;
@@ -290,11 +300,10 @@ class _AddSubjectResult {
   });
 }
 
-/// 과목 추가 바텀시트
 class _AddSubjectSheet extends StatefulWidget {
-  final SubjectType? forceType;
+  final SubjectType initialType;
 
-  const _AddSubjectSheet({this.forceType});
+  const _AddSubjectSheet({required this.initialType});
 
   @override
   State<_AddSubjectSheet> createState() => _AddSubjectSheetState();
@@ -309,15 +318,7 @@ class _AddSubjectSheetState extends State<_AddSubjectSheet> {
   @override
   void initState() {
     super.initState();
-    selectedType = widget.forceType ?? SubjectType.mock;
-  }
-
-  @override
-  void dispose() {
-    nameController.dispose();
-    timeController.dispose();
-    questionController.dispose();
-    super.dispose();
+    selectedType = widget.initialType;
   }
 
   @override
@@ -325,92 +326,49 @@ class _AddSubjectSheetState extends State<_AddSubjectSheet> {
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        left: 24,
+        right: 24,
+        top: 24,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 32,
       ),
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Handle
             Center(
               child: Container(
-                width: 32,
+                width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.gray300,
+                  color: AppColors.gray200,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
-            const SizedBox(height: 20),
-
-            // Title
-            Text('새 과목', style: AppTypography.headlineMedium),
             const SizedBox(height: 24),
-
-            // Type selection (탭에서 강제 지정된 경우 표시 안함)
-            if (widget.forceType == null) ...[
-              Text('과목 타입', style: AppTypography.labelMedium),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _TypeButton(
-                      label: '모의고사',
-                      icon: Icons.timer_outlined,
-                      isSelected: selectedType == SubjectType.mock,
-                      onTap: () =>
-                          setState(() => selectedType = SubjectType.mock),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _TypeButton(
-                      label: '일반공부',
-                      icon: Icons.book_outlined,
-                      isSelected: selectedType == SubjectType.practice,
-                      onTap: () =>
-                          setState(() => selectedType = SubjectType.practice),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-            ],
-
-            // Name field
+            Text('새 과목 추가', style: AppTypography.headlineLarge),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                _buildTypeTab('모의고사', SubjectType.mock),
+                const SizedBox(width: 12),
+                _buildTypeTab('일반공부', SubjectType.practice),
+              ],
+            ),
+            const SizedBox(height: 32),
             Text('과목 이름', style: AppTypography.labelMedium),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             TextField(
               controller: nameController,
               autofocus: true,
-              decoration: InputDecoration(
-                hintText: '예: 국어',
-                hintStyle: AppTypography.bodyMedium.copyWith(
-                  color: AppColors.textTertiary,
-                ),
-                filled: true,
-                fillColor: AppColors.gray50,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-              ),
+              style: AppTypography.bodyLarge,
+              decoration: const InputDecoration(hintText: '예: 수능 수학, 영어 회화'),
             ),
-            const SizedBox(height: 20),
-
-            // Mock exam settings
+            const SizedBox(height: 24),
             if (selectedType == SubjectType.mock) ...[
               Row(
                 children: [
@@ -423,19 +381,7 @@ class _AddSubjectSheetState extends State<_AddSubjectSheet> {
                         TextField(
                           controller: timeController,
                           keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            hintText: '80',
-                            filled: true,
-                            fillColor: AppColors.gray50,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: BorderSide.none,
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 14,
-                            ),
-                          ),
+                          decoration: const InputDecoration(hintText: '80'),
                         ),
                       ],
                     ),
@@ -450,32 +396,18 @@ class _AddSubjectSheetState extends State<_AddSubjectSheet> {
                         TextField(
                           controller: questionController,
                           keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            hintText: '45',
-                            filled: true,
-                            fillColor: AppColors.gray50,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: BorderSide.none,
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 14,
-                            ),
-                          ),
+                          decoration: const InputDecoration(hintText: '45'),
                         ),
                       ],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 32),
             ],
-
-            // Submit button
             SizedBox(
               width: double.infinity,
-              child: AppButton(label: '추가', onPressed: _submit),
+              child: AppButton(label: '과목 생성하기', onPressed: _submit),
             ),
           ],
         ),
@@ -483,18 +415,44 @@ class _AddSubjectSheetState extends State<_AddSubjectSheet> {
     );
   }
 
+  Widget _buildTypeTab(String label, SubjectType type) {
+    final isSelected = selectedType == type;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => selectedType = type),
+        child: AnimatedContainer(
+          duration: AppDurations.fast,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primary : AppColors.gray50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? AppColors.primary : AppColors.border,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: AppTypography.labelMedium.copyWith(
+                color: isSelected ? Colors.white : AppColors.textSecondary,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   void _submit() {
     final name = nameController.text.trim();
-    if (name.isEmpty) {
-      Get.snackbar('오류', '과목 이름을 입력하세요');
-      return;
-    }
+    if (name.isEmpty) return;
 
     if (selectedType == SubjectType.mock) {
       final time = int.tryParse(timeController.text) ?? 80;
       final count = int.tryParse(questionController.text) ?? 45;
-
-      Navigator.of(context).pop(
+      Navigator.pop(
+        context,
         _AddSubjectResult(
           name: name,
           type: SubjectType.mock,
@@ -503,79 +461,23 @@ class _AddSubjectSheetState extends State<_AddSubjectSheet> {
         ),
       );
     } else {
-      Navigator.of(
+      Navigator.pop(
         context,
-      ).pop(_AddSubjectResult(name: name, type: SubjectType.practice));
+        _AddSubjectResult(name: name, type: SubjectType.practice),
+      );
     }
   }
 }
 
-/// 타입 선택 버튼
-class _TypeButton extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _TypeButton({
-    required this.label,
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary.withAlpha(20)
-              : AppColors.gray50,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? AppColors.primary : AppColors.textTertiary,
-              size: 24,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: AppTypography.labelMedium.copyWith(
-                color: isSelected ? AppColors.primary : AppColors.textSecondary,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// 모의고사 설정 결과
 class _MockSettingsResult {
   final int timeSeconds;
   final int questionCount;
-
   _MockSettingsResult({required this.timeSeconds, required this.questionCount});
 }
 
-/// 모의고사 설정 바텀시트
 class _MockSettingsSheet extends StatefulWidget {
   final SubjectDb subject;
-
   const _MockSettingsSheet({required this.subject});
-
   @override
   State<_MockSettingsSheet> createState() => _MockSettingsSheetState();
 }
@@ -595,47 +497,27 @@ class _MockSettingsSheetState extends State<_MockSettingsSheet> {
   }
 
   @override
-  void dispose() {
-    timeController.dispose();
-    questionController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        left: 24,
+        right: 24,
+        top: 24,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 32,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Handle
-          Center(
-            child: Container(
-              width: 32,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.gray300,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Title
-          Text('시험 설정', style: AppTypography.headlineMedium),
-          Text(widget.subject.subjectName, style: AppTypography.bodySmall),
+          const Center(child: _HandleBar()),
           const SizedBox(height: 24),
-
+          Text('시험 설정 변경', style: AppTypography.headlineLarge),
+          Text(widget.subject.subjectName, style: AppTypography.bodySmall),
+          const SizedBox(height: 32),
           Row(
             children: [
               Expanded(
@@ -647,18 +529,6 @@ class _MockSettingsSheetState extends State<_MockSettingsSheet> {
                     TextField(
                       controller: timeController,
                       keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: AppColors.gray50,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 14,
-                        ),
-                      ),
                     ),
                   ],
                 ),
@@ -673,36 +543,22 @@ class _MockSettingsSheetState extends State<_MockSettingsSheet> {
                     TextField(
                       controller: questionController,
                       keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: AppColors.gray50,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 14,
-                        ),
-                      ),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 24),
-
-          // Submit button
+          const SizedBox(height: 32),
           SizedBox(
             width: double.infinity,
             child: AppButton(
-              label: '저장',
+              label: '설정 저장하기',
               onPressed: () {
                 final time = int.tryParse(timeController.text) ?? 80;
                 final count = int.tryParse(questionController.text) ?? 45;
-
-                Navigator.of(context).pop(
+                Navigator.pop(
+                  context,
                   _MockSettingsResult(
                     timeSeconds: time * 60,
                     questionCount: count,
@@ -712,6 +568,21 @@ class _MockSettingsSheetState extends State<_MockSettingsSheet> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _HandleBar extends StatelessWidget {
+  const _HandleBar();
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 40,
+      height: 4,
+      decoration: BoxDecoration(
+        color: AppColors.gray200,
+        borderRadius: BorderRadius.circular(2),
       ),
     );
   }

@@ -15,8 +15,11 @@ class TimerController extends GetxController {
   final laps = <int>[].obs;
   final isSaving = false.obs;
 
-  // 타이머 완료 (모의고사 카운트다운 종료)
+  // 타이머 완료 (모의고사 카운트다운 종료 또는 문항 완료)
   final isTimerFinished = false.obs;
+
+  // [이슈 6] 조기 종료 사유
+  final finishReason = ''.obs;
 
   Timer? _timer;
   int _lastLapTotalSeconds = 0;
@@ -49,9 +52,12 @@ class TimerController extends GetxController {
   /// 현재 문항 번호 (1부터 시작)
   int get currentQuestionNumber => laps.length + 1;
 
+  /// 완료된 문항 수
+  int get completedQuestions => laps.length;
+
   void startTimer() {
     if (isTimerRunning.value) return;
-    if (isTimerFinished.value) return; // 종료된 타이머는 재시작 불가
+    if (isTimerFinished.value) return;
 
     _startedAt ??= DateTime.now();
     isTimerRunning.value = true;
@@ -74,10 +80,27 @@ class TimerController extends GetxController {
   void _onMockTimeUp() {
     stopTimer();
     isTimerFinished.value = true;
-    // 마지막 문항 기록
+    finishReason.value = '시간 종료';
     if (currentLapSeconds > 0) {
       recordLap();
     }
+  }
+
+  /// [이슈 6] 모의고사 문항 완료 시 호출
+  void _onMockQuestionsComplete() {
+    stopTimer();
+    isTimerFinished.value = true;
+    finishReason.value = '전체 문항 완료';
+  }
+
+  /// [이슈 6] 조기 종료 (사용자 선택)
+  void finishEarly() {
+    if (currentLapSeconds > 0) {
+      recordLap();
+    }
+    stopTimer();
+    isTimerFinished.value = true;
+    finishReason.value = '조기 종료 ($completedQuestions문항)';
   }
 
   void resetTimer() {
@@ -87,6 +110,7 @@ class TimerController extends GetxController {
     _lastLapTotalSeconds = 0;
     _startedAt = null;
     isTimerFinished.value = false;
+    finishReason.value = '';
   }
 
   void recordLap() {
@@ -94,6 +118,13 @@ class TimerController extends GetxController {
     if (lapTime > 0) {
       laps.add(lapTime);
       _lastLapTotalSeconds = timerElapsedSeconds.value;
+
+      // [이슈 6] 모의고사 문항 완료 체크
+      if (isMockMode &&
+          mockQuestionCount > 0 &&
+          laps.length >= mockQuestionCount) {
+        _onMockQuestionsComplete();
+      }
     }
   }
 
@@ -109,7 +140,6 @@ class TimerController extends GetxController {
       return;
     }
 
-    // 마지막 문항 기록 (남아있으면)
     if (currentLapSeconds > 0) {
       recordLap();
     }

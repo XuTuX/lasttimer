@@ -53,8 +53,13 @@ const SubjectDbSchema = CollectionSchema(
       type: IsarType.byte,
       enumMap: _SubjectDbtypeEnumValueMap,
     ),
-    r'updatedAt': PropertySchema(
+    r'typeIndex': PropertySchema(
       id: 7,
+      name: r'typeIndex',
+      type: IsarType.long,
+    ),
+    r'updatedAt': PropertySchema(
+      id: 8,
       name: r'updatedAt',
       type: IsarType.dateTime,
     )
@@ -65,16 +70,21 @@ const SubjectDbSchema = CollectionSchema(
   deserializeProp: _subjectDbDeserializeProp,
   idName: r'id',
   indexes: {
-    r'subjectName': IndexSchema(
-      id: -2702852998942163311,
-      name: r'subjectName',
+    r'typeIndex_subjectName': IndexSchema(
+      id: -4843504016697575549,
+      name: r'typeIndex_subjectName',
       unique: true,
       replace: false,
       properties: [
         IndexPropertySchema(
+          name: r'typeIndex',
+          type: IndexType.value,
+          caseSensitive: false,
+        ),
+        IndexPropertySchema(
           name: r'subjectName',
           type: IndexType.hash,
-          caseSensitive: false,
+          caseSensitive: true,
         )
       ],
     )
@@ -110,7 +120,8 @@ void _subjectDbSerialize(
   writer.writeLong(offsets[4], object.mockTimeSeconds);
   writer.writeString(offsets[5], object.subjectName);
   writer.writeByte(offsets[6], object.type.index);
-  writer.writeDateTime(offsets[7], object.updatedAt);
+  writer.writeLong(offsets[7], object.typeIndex);
+  writer.writeDateTime(offsets[8], object.updatedAt);
 }
 
 SubjectDb _subjectDbDeserialize(
@@ -127,7 +138,7 @@ SubjectDb _subjectDbDeserialize(
   object.subjectName = reader.readString(offsets[5]);
   object.type = _SubjectDbtypeValueEnumMap[reader.readByteOrNull(offsets[6])] ??
       SubjectType.practice;
-  object.updatedAt = reader.readDateTime(offsets[7]);
+  object.updatedAt = reader.readDateTime(offsets[8]);
   return object;
 }
 
@@ -154,6 +165,8 @@ P _subjectDbDeserializeProp<P>(
       return (_SubjectDbtypeValueEnumMap[reader.readByteOrNull(offset)] ??
           SubjectType.practice) as P;
     case 7:
+      return (reader.readLong(offset)) as P;
+    case 8:
       return (reader.readDateTime(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -182,57 +195,93 @@ void _subjectDbAttach(IsarCollection<dynamic> col, Id id, SubjectDb object) {
 }
 
 extension SubjectDbByIndex on IsarCollection<SubjectDb> {
-  Future<SubjectDb?> getBySubjectName(String subjectName) {
-    return getByIndex(r'subjectName', [subjectName]);
+  Future<SubjectDb?> getByTypeIndexSubjectName(
+      int typeIndex, String subjectName) {
+    return getByIndex(r'typeIndex_subjectName', [typeIndex, subjectName]);
   }
 
-  SubjectDb? getBySubjectNameSync(String subjectName) {
-    return getByIndexSync(r'subjectName', [subjectName]);
+  SubjectDb? getByTypeIndexSubjectNameSync(int typeIndex, String subjectName) {
+    return getByIndexSync(r'typeIndex_subjectName', [typeIndex, subjectName]);
   }
 
-  Future<bool> deleteBySubjectName(String subjectName) {
-    return deleteByIndex(r'subjectName', [subjectName]);
+  Future<bool> deleteByTypeIndexSubjectName(int typeIndex, String subjectName) {
+    return deleteByIndex(r'typeIndex_subjectName', [typeIndex, subjectName]);
   }
 
-  bool deleteBySubjectNameSync(String subjectName) {
-    return deleteByIndexSync(r'subjectName', [subjectName]);
+  bool deleteByTypeIndexSubjectNameSync(int typeIndex, String subjectName) {
+    return deleteByIndexSync(
+        r'typeIndex_subjectName', [typeIndex, subjectName]);
   }
 
-  Future<List<SubjectDb?>> getAllBySubjectName(List<String> subjectNameValues) {
-    final values = subjectNameValues.map((e) => [e]).toList();
-    return getAllByIndex(r'subjectName', values);
+  Future<List<SubjectDb?>> getAllByTypeIndexSubjectName(
+      List<int> typeIndexValues, List<String> subjectNameValues) {
+    final len = typeIndexValues.length;
+    assert(subjectNameValues.length == len,
+        'All index values must have the same length');
+    final values = <List<dynamic>>[];
+    for (var i = 0; i < len; i++) {
+      values.add([typeIndexValues[i], subjectNameValues[i]]);
+    }
+
+    return getAllByIndex(r'typeIndex_subjectName', values);
   }
 
-  List<SubjectDb?> getAllBySubjectNameSync(List<String> subjectNameValues) {
-    final values = subjectNameValues.map((e) => [e]).toList();
-    return getAllByIndexSync(r'subjectName', values);
+  List<SubjectDb?> getAllByTypeIndexSubjectNameSync(
+      List<int> typeIndexValues, List<String> subjectNameValues) {
+    final len = typeIndexValues.length;
+    assert(subjectNameValues.length == len,
+        'All index values must have the same length');
+    final values = <List<dynamic>>[];
+    for (var i = 0; i < len; i++) {
+      values.add([typeIndexValues[i], subjectNameValues[i]]);
+    }
+
+    return getAllByIndexSync(r'typeIndex_subjectName', values);
   }
 
-  Future<int> deleteAllBySubjectName(List<String> subjectNameValues) {
-    final values = subjectNameValues.map((e) => [e]).toList();
-    return deleteAllByIndex(r'subjectName', values);
+  Future<int> deleteAllByTypeIndexSubjectName(
+      List<int> typeIndexValues, List<String> subjectNameValues) {
+    final len = typeIndexValues.length;
+    assert(subjectNameValues.length == len,
+        'All index values must have the same length');
+    final values = <List<dynamic>>[];
+    for (var i = 0; i < len; i++) {
+      values.add([typeIndexValues[i], subjectNameValues[i]]);
+    }
+
+    return deleteAllByIndex(r'typeIndex_subjectName', values);
   }
 
-  int deleteAllBySubjectNameSync(List<String> subjectNameValues) {
-    final values = subjectNameValues.map((e) => [e]).toList();
-    return deleteAllByIndexSync(r'subjectName', values);
+  int deleteAllByTypeIndexSubjectNameSync(
+      List<int> typeIndexValues, List<String> subjectNameValues) {
+    final len = typeIndexValues.length;
+    assert(subjectNameValues.length == len,
+        'All index values must have the same length');
+    final values = <List<dynamic>>[];
+    for (var i = 0; i < len; i++) {
+      values.add([typeIndexValues[i], subjectNameValues[i]]);
+    }
+
+    return deleteAllByIndexSync(r'typeIndex_subjectName', values);
   }
 
-  Future<Id> putBySubjectName(SubjectDb object) {
-    return putByIndex(r'subjectName', object);
+  Future<Id> putByTypeIndexSubjectName(SubjectDb object) {
+    return putByIndex(r'typeIndex_subjectName', object);
   }
 
-  Id putBySubjectNameSync(SubjectDb object, {bool saveLinks = true}) {
-    return putByIndexSync(r'subjectName', object, saveLinks: saveLinks);
+  Id putByTypeIndexSubjectNameSync(SubjectDb object, {bool saveLinks = true}) {
+    return putByIndexSync(r'typeIndex_subjectName', object,
+        saveLinks: saveLinks);
   }
 
-  Future<List<Id>> putAllBySubjectName(List<SubjectDb> objects) {
-    return putAllByIndex(r'subjectName', objects);
+  Future<List<Id>> putAllByTypeIndexSubjectName(List<SubjectDb> objects) {
+    return putAllByIndex(r'typeIndex_subjectName', objects);
   }
 
-  List<Id> putAllBySubjectNameSync(List<SubjectDb> objects,
+  List<Id> putAllByTypeIndexSubjectNameSync(List<SubjectDb> objects,
       {bool saveLinks = true}) {
-    return putAllByIndexSync(r'subjectName', objects, saveLinks: saveLinks);
+    return putAllByIndexSync(r'typeIndex_subjectName', objects,
+        saveLinks: saveLinks);
   }
 }
 
@@ -312,45 +361,138 @@ extension SubjectDbQueryWhere
     });
   }
 
-  QueryBuilder<SubjectDb, SubjectDb, QAfterWhereClause> subjectNameEqualTo(
-      String subjectName) {
+  QueryBuilder<SubjectDb, SubjectDb, QAfterWhereClause>
+      typeIndexEqualToAnySubjectName(int typeIndex) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(IndexWhereClause.equalTo(
-        indexName: r'subjectName',
-        value: [subjectName],
+        indexName: r'typeIndex_subjectName',
+        value: [typeIndex],
       ));
     });
   }
 
-  QueryBuilder<SubjectDb, SubjectDb, QAfterWhereClause> subjectNameNotEqualTo(
-      String subjectName) {
+  QueryBuilder<SubjectDb, SubjectDb, QAfterWhereClause>
+      typeIndexNotEqualToAnySubjectName(int typeIndex) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
             .addWhereClause(IndexWhereClause.between(
-              indexName: r'subjectName',
+              indexName: r'typeIndex_subjectName',
               lower: [],
-              upper: [subjectName],
+              upper: [typeIndex],
               includeUpper: false,
             ))
             .addWhereClause(IndexWhereClause.between(
-              indexName: r'subjectName',
-              lower: [subjectName],
+              indexName: r'typeIndex_subjectName',
+              lower: [typeIndex],
               includeLower: false,
               upper: [],
             ));
       } else {
         return query
             .addWhereClause(IndexWhereClause.between(
-              indexName: r'subjectName',
-              lower: [subjectName],
+              indexName: r'typeIndex_subjectName',
+              lower: [typeIndex],
               includeLower: false,
               upper: [],
             ))
             .addWhereClause(IndexWhereClause.between(
-              indexName: r'subjectName',
+              indexName: r'typeIndex_subjectName',
               lower: [],
-              upper: [subjectName],
+              upper: [typeIndex],
+              includeUpper: false,
+            ));
+      }
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterWhereClause>
+      typeIndexGreaterThanAnySubjectName(
+    int typeIndex, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'typeIndex_subjectName',
+        lower: [typeIndex],
+        includeLower: include,
+        upper: [],
+      ));
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterWhereClause>
+      typeIndexLessThanAnySubjectName(
+    int typeIndex, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'typeIndex_subjectName',
+        lower: [],
+        upper: [typeIndex],
+        includeUpper: include,
+      ));
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterWhereClause>
+      typeIndexBetweenAnySubjectName(
+    int lowerTypeIndex,
+    int upperTypeIndex, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'typeIndex_subjectName',
+        lower: [lowerTypeIndex],
+        includeLower: includeLower,
+        upper: [upperTypeIndex],
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterWhereClause>
+      typeIndexSubjectNameEqualTo(int typeIndex, String subjectName) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'typeIndex_subjectName',
+        value: [typeIndex, subjectName],
+      ));
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterWhereClause>
+      typeIndexEqualToSubjectNameNotEqualTo(int typeIndex, String subjectName) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'typeIndex_subjectName',
+              lower: [typeIndex],
+              upper: [typeIndex, subjectName],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'typeIndex_subjectName',
+              lower: [typeIndex, subjectName],
+              includeLower: false,
+              upper: [typeIndex],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'typeIndex_subjectName',
+              lower: [typeIndex, subjectName],
+              includeLower: false,
+              upper: [typeIndex],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'typeIndex_subjectName',
+              lower: [typeIndex],
+              upper: [typeIndex, subjectName],
               includeUpper: false,
             ));
       }
@@ -822,6 +964,60 @@ extension SubjectDbQueryFilter
     });
   }
 
+  QueryBuilder<SubjectDb, SubjectDb, QAfterFilterCondition> typeIndexEqualTo(
+      int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'typeIndex',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterFilterCondition>
+      typeIndexGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'typeIndex',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterFilterCondition> typeIndexLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'typeIndex',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterFilterCondition> typeIndexBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'typeIndex',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<SubjectDb, SubjectDb, QAfterFilterCondition> updatedAtEqualTo(
       DateTime value) {
     return QueryBuilder.apply(this, (query) {
@@ -969,6 +1165,18 @@ extension SubjectDbQuerySortBy on QueryBuilder<SubjectDb, SubjectDb, QSortBy> {
     });
   }
 
+  QueryBuilder<SubjectDb, SubjectDb, QAfterSortBy> sortByTypeIndex() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'typeIndex', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterSortBy> sortByTypeIndexDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'typeIndex', Sort.desc);
+    });
+  }
+
   QueryBuilder<SubjectDb, SubjectDb, QAfterSortBy> sortByUpdatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'updatedAt', Sort.asc);
@@ -1081,6 +1289,18 @@ extension SubjectDbQuerySortThenBy
     });
   }
 
+  QueryBuilder<SubjectDb, SubjectDb, QAfterSortBy> thenByTypeIndex() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'typeIndex', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SubjectDb, SubjectDb, QAfterSortBy> thenByTypeIndexDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'typeIndex', Sort.desc);
+    });
+  }
+
   QueryBuilder<SubjectDb, SubjectDb, QAfterSortBy> thenByUpdatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'updatedAt', Sort.asc);
@@ -1139,6 +1359,12 @@ extension SubjectDbQueryWhereDistinct
     });
   }
 
+  QueryBuilder<SubjectDb, SubjectDb, QDistinct> distinctByTypeIndex() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'typeIndex');
+    });
+  }
+
   QueryBuilder<SubjectDb, SubjectDb, QDistinct> distinctByUpdatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'updatedAt');
@@ -1193,6 +1419,12 @@ extension SubjectDbQueryProperty
   QueryBuilder<SubjectDb, SubjectType, QQueryOperations> typeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'type');
+    });
+  }
+
+  QueryBuilder<SubjectDb, int, QQueryOperations> typeIndexProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'typeIndex');
     });
   }
 
