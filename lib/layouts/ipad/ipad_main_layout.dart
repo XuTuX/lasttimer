@@ -20,17 +20,46 @@ class IPadMainLayout extends StatefulWidget {
   State<IPadMainLayout> createState() => _IPadMainLayoutState();
 }
 
-class _IPadMainLayoutState extends State<IPadMainLayout> {
+class _IPadMainLayoutState extends State<IPadMainLayout>
+    with TickerProviderStateMixin {
   final SubjectController subjectController = Get.find<SubjectController>();
   SubjectDetailController? detailController;
+  late TabController _tabController;
 
   int? selectedSubjectId;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(_onTabChanged);
     // 첫 번째 과목 자동 선택
     _autoSelectFirstSubject();
+  }
+
+  void _onTabChanged() {
+    if (_tabController.indexIsChanging) return;
+
+    // 탭이 바뀌면 해당 탭의 첫 번째 과목을 자동으로 선택하도록 수정
+    final subjects = _tabController.index == 0
+        ? subjectController.mockSubjects
+        : subjectController.practiceSubjects;
+
+    if (subjects.isNotEmpty) {
+      _selectSubject(subjects.first);
+    } else {
+      setState(() {
+        selectedSubjectId = null;
+        detailController = null;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabController.removeListener(_onTabChanged);
+    _tabController.dispose();
+    super.dispose();
   }
 
   void _autoSelectFirstSubject() {
@@ -69,110 +98,107 @@ class _IPadMainLayoutState extends State<IPadMainLayout> {
     final screenWidth = MediaQuery.of(context).size.width;
     final leftPanelWidth = (screenWidth * 0.35).clamp(280.0, 400.0);
 
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        backgroundColor: AppColors.background,
-        body: Row(
-          children: [
-            // ======================================
-            // LEFT PANEL - Subject List
-            // ======================================
-            Container(
-              width: leftPanelWidth,
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                border: Border(
-                  right: BorderSide(color: AppColors.border, width: 1),
-                ),
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: Row(
+        children: [
+          // ======================================
+          // LEFT PANEL - Subject List
+          // ======================================
+          Container(
+            width: leftPanelWidth,
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              border: Border(
+                right: BorderSide(color: AppColors.border, width: 1),
               ),
-              child: Column(
-                children: [
-                  // iPad AppBar
-                  SafeArea(
-                    bottom: false,
-                    child: Container(
-                      padding: const EdgeInsets.fromLTRB(24, 16, 16, 8),
-                      child: Row(
-                        children: [
-                          Text(
-                            'MOMENTUM',
-                            style: AppTypography.headlineMedium.copyWith(
-                              letterSpacing: 2.0,
-                              fontWeight: FontWeight.w800,
-                            ),
+            ),
+            child: Column(
+              children: [
+                // iPad AppBar
+                SafeArea(
+                  bottom: false,
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 16, 8),
+                    child: Row(
+                      children: [
+                        Text(
+                          'MOMENTUM',
+                          style: AppTypography.headlineMedium.copyWith(
+                            letterSpacing: 2.0,
+                            fontWeight: FontWeight.w800,
                           ),
-                          const Spacer(),
-                          // Add button
-                          IconButton(
-                            icon: const Icon(Icons.add_rounded),
-                            color: AppColors.accent,
-                            onPressed: () => _showAddDialog(context),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // Tab bar
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16),
-                    child: TabBar(
-                      tabs: const [
-                        Tab(text: '모의고사'),
-                        Tab(text: '자율 학습'),
-                      ],
-                      indicatorWeight: 2.5,
-                      indicatorPadding: const EdgeInsets.symmetric(
-                        horizontal: 4,
-                      ),
-                      indicator: UnderlineTabIndicator(
-                        borderSide: const BorderSide(
-                          width: 3,
-                          color: AppColors.accent,
                         ),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
+                        const Spacer(),
+                        // Add button
+                        IconButton(
+                          icon: const Icon(Icons.add_rounded),
+                          color: AppColors.accent,
+                          onPressed: () => _showAddDialog(context),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 8),
+                ),
 
-                  // Subject list
-                  Expanded(
-                    child: Obx(() {
-                      return TabBarView(
-                        children: [
-                          _buildSubjectList(
-                            subjectController.mockSubjects,
-                            isMock: true,
-                          ),
-                          _buildSubjectList(
-                            subjectController.practiceSubjects,
-                            isMock: false,
-                          ),
-                        ],
-                      );
-                    }),
+                // Tab bar
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  child: TabBar(
+                    controller: _tabController,
+                    tabs: const [
+                      Tab(text: '모의고사'),
+                      Tab(text: '자율 학습'),
+                    ],
+                    indicatorWeight: 2.5,
+                    indicatorPadding: const EdgeInsets.symmetric(horizontal: 4),
+                    indicator: UnderlineTabIndicator(
+                      borderSide: const BorderSide(
+                        width: 3,
+                        color: AppColors.accent,
+                      ),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
-                ],
-              ),
-            ),
+                ),
+                const SizedBox(height: 8),
 
-            // ======================================
-            // RIGHT PANEL - Detail View
-            // ======================================
-            Expanded(
-              child: selectedSubjectId != null && detailController != null
-                  ? _IPadDetailPanel(
-                      controller: detailController!,
-                      onStartTimer: () => Get.toNamed(Routes.timer),
-                      onExamTap: (exam) =>
-                          Get.toNamed(Routes.recordDetail, arguments: exam.id),
-                    )
-                  : _buildEmptyDetailPanel(),
+                // Subject list
+                Expanded(
+                  child: Obx(() {
+                    return TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildSubjectList(
+                          subjectController.mockSubjects,
+                          isMock: true,
+                        ),
+                        _buildSubjectList(
+                          subjectController.practiceSubjects,
+                          isMock: false,
+                        ),
+                      ],
+                    );
+                  }),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+
+          // ======================================
+          // RIGHT PANEL - Detail View
+          // ======================================
+          Expanded(
+            child: selectedSubjectId != null && detailController != null
+                ? _IPadDetailPanel(
+                    controller: detailController!,
+                    onStartTimer: () => Get.toNamed(Routes.timer),
+                    onExamTap: (exam) =>
+                        Get.toNamed(Routes.recordDetail, arguments: exam.id),
+                  )
+                : _buildEmptyDetailPanel(),
+          ),
+        ],
       ),
     );
   }
@@ -256,8 +282,7 @@ class _IPadMainLayoutState extends State<IPadMainLayout> {
   }
 
   void _showAddDialog(BuildContext context) async {
-    final tabController = DefaultTabController.of(context);
-    final initialType = tabController.index == 0
+    final initialType = _tabController.index == 0
         ? SubjectType.mock
         : SubjectType.practice;
 
@@ -470,21 +495,29 @@ class _IPadDetailPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    // 화면 크기에 따라 그리드 열 개수 조정
+    final crossAxisCount = screenWidth > 1100 ? 3 : 2;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.background,
         automaticallyImplyLeading: false,
+        toolbarHeight: 64,
         title: Obx(
           () => Text(
             controller.subject.value?.subjectName ?? '',
-            style: AppTypography.headlineMedium,
+            style: AppTypography.headlineMedium.copyWith(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
         actions: [
           // Start Timer Button
           Padding(
-            padding: const EdgeInsets.only(right: 16),
+            padding: const EdgeInsets.only(right: 24),
             child: _IPadStartButton(
               label: controller.isMock ? '모의고사 시작' : '공부 시작',
               onPressed: onStartTimer,
@@ -500,22 +533,29 @@ class _IPadDetailPanel extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.history_outlined,
-                  size: 56,
-                  color: AppColors.gray300,
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: AppColors.gray50,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.history_outlined,
+                    size: 48,
+                    color: AppColors.gray300,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  '기록이 없습니다',
-                  style: AppTypography.bodyLarge.copyWith(
+                  '아직 기록이 없습니다',
+                  style: AppTypography.headlineSmall.copyWith(
                     color: AppColors.textSecondary,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
-                  '시작 버튼을 눌러 첫 기록을 남겨보세요',
-                  style: AppTypography.bodySmall.copyWith(
+                  '상단의 시작 버튼을 눌러 첫 학습을 시작해 보세요',
+                  style: AppTypography.bodyMedium.copyWith(
                     color: AppColors.textTertiary,
                   ),
                 ),
@@ -524,163 +564,245 @@ class _IPadDetailPanel extends StatelessWidget {
           );
         }
 
-        return Row(
-          children: [
-            // Stats Panel (Left side of detail)
-            Container(
-              width: 320,
-              padding: const EdgeInsets.all(24),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('분석', style: AppTypography.headlineSmall),
-                    const SizedBox(height: 16),
-                    _buildDashboard(),
-                  ],
-                ),
-              ),
-            ),
-
-            // Divider
-            Container(width: 1, color: AppColors.divider),
-
-            // Exam History (Right side of detail)
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        return SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 1. Stats Section Header
+              Row(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('기록', style: AppTypography.headlineSmall),
-                        Obx(
-                          () => Text(
-                            '${controller.totalExams}개',
-                            style: AppTypography.bodySmall,
-                          ),
-                        ),
-                      ],
+                  Text(
+                    '집중 분석',
+                    style: AppTypography.headlineMedium.copyWith(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                  Expanded(
-                    child: Obx(
-                      () => ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                        itemCount: controller.exams.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 8),
-                        itemBuilder: (context, index) {
-                          final exam = controller.exams[index];
-                          return ExamHistoryCard(
-                            title: exam.title,
-                            questionCount: exam.questionCount,
-                            totalTime: formatSeconds(exam.totalSeconds),
-                            onTap: () => onExamTap(exam),
-                            onDelete: () => controller.deleteExam(exam.id),
-                            showSwipeHint: index == 0,
-                          );
-                        },
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.gray50,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '총 ${controller.totalExams}회의 기록',
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
                 ],
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+
+              // 2. Stats Grid - 컴팩트한 2x2 그리드
+              _buildStatsGrid(),
+
+              const SizedBox(height: 32),
+
+              // 3. Recent History Section
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    '최근 기록',
+                    style: AppTypography.headlineMedium.copyWith(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {},
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.textTertiary,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text(
+                      '전체 보기',
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // 4. History Grid - 2~3열 그리드
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 3.2,
+                ),
+                itemCount: controller.exams.length > 6
+                    ? 6
+                    : controller.exams.length,
+                itemBuilder: (context, index) {
+                  final exam = controller.exams[index];
+                  return _IPadHistoryTile(
+                    title: exam.title,
+                    questionCount: exam.questionCount,
+                    totalTime: formatSeconds(exam.totalSeconds),
+                    onTap: () => onExamTap(exam),
+                  );
+                },
+              ),
+
+              // 더 많은 기록이 있을 경우 리스트로 표시
+              if (controller.exams.length > 6) ...[
+                const SizedBox(height: 16),
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: controller.exams.length - 6,
+                  separatorBuilder: (_, _) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    final exam = controller.exams[index + 6];
+                    return _IPadHistoryTile(
+                      title: exam.title,
+                      questionCount: exam.questionCount,
+                      totalTime: formatSeconds(exam.totalSeconds),
+                      onTap: () => onExamTap(exam),
+                    );
+                  },
+                ),
+              ],
+            ],
+          ),
         );
       }),
     );
   }
 
-  Widget _buildDashboard() {
-    return Obx(
-      () =>
-          controller.isMock ? _buildMockDashboard() : _buildPracticeDashboard(),
+  Widget _buildStatsGrid() {
+    final List<_StatData> stats = controller.isMock
+        ? [
+            _StatData(
+              '평균 소요 시간',
+              formatSeconds(controller.avgTotalSeconds.value.toInt()),
+              Icons.timer_outlined,
+              AppColors.accent,
+            ),
+            _StatData(
+              '총 시험 횟수',
+              '${controller.totalExams}회',
+              Icons.history,
+              AppColors.textSecondary,
+            ),
+            _StatData(
+              '최단 기록',
+              formatSeconds(controller.minTotalSeconds.value.toInt()),
+              Icons.speed,
+              AppColors.textSecondary,
+            ),
+            _StatData(
+              '문항당 평균',
+              formatSeconds(controller.avgLapSeconds.value.toInt()),
+              Icons.av_timer,
+              AppColors.textSecondary,
+            ),
+          ]
+        : [
+            _StatData(
+              '총 공부 시간',
+              _formatLongDuration(controller.totalStudySeconds.value),
+              Icons.auto_graph_rounded,
+              AppColors.accent,
+            ),
+            _StatData(
+              '총 세션',
+              '${controller.totalExams}회',
+              Icons.calendar_today_outlined,
+              AppColors.textSecondary,
+            ),
+            _StatData(
+              '누적 문항',
+              '${controller.totalLapCount}문항',
+              Icons.check_circle_outline,
+              AppColors.textSecondary,
+            ),
+            _StatData(
+              '문항 평균',
+              formatSeconds(controller.avgLapSeconds.value.toInt()),
+              Icons.access_time,
+              AppColors.textSecondary,
+            ),
+          ];
+
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisSpacing: 12,
+      mainAxisSpacing: 12,
+      childAspectRatio: 2.0,
+      children: stats.map((data) => _buildStatCard(data)).toList(),
     );
   }
 
-  Widget _buildMockDashboard() {
+  Widget _buildStatCard(_StatData data) {
+    final isAccent = data.color == AppColors.accent;
+
     return Container(
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        color: isAccent ? data.color.withAlpha(12) : AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isAccent ? data.color.withAlpha(40) : AppColors.border,
+          width: isAccent ? 1.5 : 1,
+        ),
       ),
-      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _buildStatRow(
-            '평균 소요 시간',
-            formatSeconds(controller.avgTotalSeconds.value.toInt()),
+          Row(
+            children: [
+              Icon(
+                data.icon,
+                size: 14,
+                color: isAccent ? data.color : AppColors.gray400,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                data.label,
+                style: AppTypography.caption.copyWith(
+                  color: isAccent ? data.color : AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          const Divider(height: 1),
-          const SizedBox(height: 16),
-          _buildStatRow('총 시험', '${controller.totalExams}회'),
-          const SizedBox(height: 12),
-          _buildStatRow(
-            '최단기록',
-            formatSeconds(controller.minTotalSeconds.value.toInt()),
-          ),
-          const SizedBox(height: 12),
-          _buildStatRow(
-            '문항평균',
-            formatSeconds(controller.avgLapSeconds.value.toInt()),
+          const SizedBox(height: 8),
+          Text(
+            data.value,
+            style: AppTypography.headlineLarge.copyWith(
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
+              color: AppColors.textPrimary,
+            ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildPracticeDashboard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildStatRow(
-            '총 공부 시간',
-            _formatLongDuration(controller.totalStudySeconds.value),
-          ),
-          const SizedBox(height: 16),
-          const Divider(height: 1),
-          const SizedBox(height: 16),
-          _buildStatRow('총 세션', '${controller.totalExams}회'),
-          const SizedBox(height: 12),
-          _buildStatRow('문제 풀이', '${controller.totalLapCount}문항'),
-          const SizedBox(height: 12),
-          _buildStatRow(
-            '문항 평균',
-            formatSeconds(controller.avgLapSeconds.value.toInt()),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatRow(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: AppTypography.bodyMedium.copyWith(
-            color: AppColors.textSecondary,
-          ),
-        ),
-        Text(
-          value,
-          style: AppTypography.labelLarge.copyWith(fontWeight: FontWeight.w700),
-        ),
-      ],
     );
   }
 
@@ -688,14 +810,84 @@ class _IPadDetailPanel extends StatelessWidget {
     final hours = totalSeconds ~/ 3600;
     final minutes = (totalSeconds % 3600) ~/ 60;
     final seconds = totalSeconds % 60;
+    if (hours > 0) return '$hours시간 $minutes분';
+    if (minutes > 0) return '$minutes분 $seconds초';
+    return '$seconds초';
+  }
+}
 
-    if (hours > 0) {
-      return '$hours시간 $minutes분';
-    } else if (minutes > 0) {
-      return '$minutes분 $seconds초';
-    } else {
-      return '$seconds초';
-    }
+class _StatData {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+  _StatData(this.label, this.value, this.icon, this.color);
+}
+
+/// iPad 최근 기록 타일 - 컴팩트한 그리드용
+class _IPadHistoryTile extends StatelessWidget {
+  final String title;
+  final int questionCount;
+  final String totalTime;
+  final VoidCallback? onTap;
+
+  const _IPadHistoryTile({
+    required this.title,
+    required this.questionCount,
+    required this.totalTime,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      title,
+                      style: AppTypography.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '$questionCount문항 · $totalTime',
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.textTertiary,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.gray300,
+                size: 18,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

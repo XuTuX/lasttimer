@@ -62,13 +62,13 @@ class _IPadTimerLayoutState extends State<IPadTimerLayout>
               final isFinished = controller.isTimerFinished.value;
 
               if (!isFinished && !isRunning && hasStarted) {
-                return TextButton(
-                  onPressed: () => _showSaveSheet(context),
-                  child: Text(
-                    controller.isMockMode ? '종료' : '저장',
-                    style: AppTypography.labelMedium.copyWith(
-                      color: AppColors.error,
-                    ),
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: AppButton(
+                    label: controller.isMockMode ? '종료' : '저장',
+                    variant: AppButtonVariant.danger,
+                    size: AppButtonSize.small,
+                    onPressed: () => _showSaveSheet(context),
                   ),
                 );
               }
