@@ -410,63 +410,60 @@ class _IPadTimerLayoutState extends State<IPadTimerLayout>
   }
 
   Future<String?> _showExitOptions() async {
-    return await showModalBottomSheet<String>(
+    return await showDialog<String>(
       context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        constraints: const BoxConstraints(maxWidth: 500),
-        margin: const EdgeInsets.symmetric(horizontal: 100),
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 32,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: AppColors.gray200,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Text('기록을 어떻게 할까요?', style: AppTypography.headlineMedium),
-                  const SizedBox(height: 32),
-                  SizedBox(
-                    width: double.infinity,
-                    child: AppButton(
-                      label: '기록 저장하고 종료',
-                      onPressed: () => Navigator.pop(context, 'save'),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: AppButton(
-                      label: '저장하지 않고 나가기',
-                      variant: AppButtonVariant.secondary,
-                      onPressed: () => Navigator.pop(context, 'discard'),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                ],
-              ),
+      builder: (context) => Center(
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 400),
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: AppShadows.large,
             ),
-            Positioned(
-              right: 8,
-              top: 8,
-              child: IconButton(
-                icon: const Icon(Icons.close_rounded, color: AppColors.gray400),
-                onPressed: () => Navigator.pop(context),
-              ),
+            child: Stack(
+              children: [
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 8),
+                    Text('기록을 어떻게 할까요?', style: AppTypography.headlineMedium),
+                    const SizedBox(height: 32),
+                    SizedBox(
+                      width: double.infinity,
+                      child: AppButton(
+                        label: '기록 저장하고 종료',
+                        onPressed: () => Navigator.pop(context, 'save'),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: AppButton(
+                        label: '저장하지 않고 나가기',
+                        variant: AppButtonVariant.secondary,
+                        onPressed: () => Navigator.pop(context, 'discard'),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                ),
+                Positioned(
+                  right: -8,
+                  top: -8,
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      color: AppColors.gray400,
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -475,54 +472,78 @@ class _IPadTimerLayoutState extends State<IPadTimerLayout>
   void _showSaveSheet(BuildContext context) async {
     if (controller.isTimerRunning.value) controller.stopTimer();
     final titleController = TextEditingController();
-    final result = await showModalBottomSheet<String>(
+
+    final result = await showDialog<String>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      barrierDismissible: true,
       builder: (context) => Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 500),
-          margin: EdgeInsets.only(
-            left: 40,
-            right: 40,
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(24),
-          ),
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 32,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.gray200,
-                    borderRadius: BorderRadius.circular(2),
+        child: SingleChildScrollView(
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 400),
+              margin: EdgeInsets.only(
+                left: 40,
+                right: 40,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 40,
+                top: 40,
+              ),
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: AppShadows.large,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('기록 저장', style: AppTypography.headlineMedium),
+                  const SizedBox(height: 24),
+                  TextField(
+                    controller: titleController,
+                    autofocus: true,
+                    style: AppTypography.bodyLarge,
+                    decoration: InputDecoration(
+                      hintText: '기록 제목 입력',
+                      hintStyle: AppTypography.bodyLarge.copyWith(
+                        color: AppColors.textTertiary,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.border),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.border),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: AppColors.primary,
+                          width: 1.5,
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: AppColors.gray50,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    child: AppButton(
+                      label: '저장 완료',
+                      onPressed: () =>
+                          Navigator.pop(context, titleController.text),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 24),
-              Text('기록 저장', style: AppTypography.headlineMedium),
-              const SizedBox(height: 20),
-              TextField(
-                controller: titleController,
-                autofocus: true,
-                decoration: const InputDecoration(hintText: '기록 제목 입력'),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: AppButton(
-                  label: '저장 완료',
-                  onPressed: () => Navigator.pop(context, titleController.text),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

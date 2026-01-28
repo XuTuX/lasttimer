@@ -353,52 +353,85 @@ class _TimerPageState extends State<TimerPage> with TickerProviderStateMixin {
   void _showSaveSheet(BuildContext context) async {
     if (controller.isTimerRunning.value) controller.stopTimer();
     final titleController = TextEditingController();
+
     final result = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
+      builder: (context) => Padding(
         padding: EdgeInsets.only(
-          left: 24,
-          right: 24,
-          top: 24,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 32,
+          bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 32,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.gray200,
-                  borderRadius: BorderRadius.circular(2),
-                ),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 32,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppColors.gray200,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text('기록 저장', style: AppTypography.headlineMedium),
+                  const SizedBox(height: 20),
+                  TextField(
+                    controller: titleController,
+                    autofocus: true,
+                    style: AppTypography.bodyLarge,
+                    decoration: InputDecoration(
+                      hintText: '기록 제목 입력',
+                      hintStyle: AppTypography.bodyLarge.copyWith(
+                        color: AppColors.textTertiary,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.border),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.border),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: AppColors.primary,
+                          width: 1.5,
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: AppColors.gray50,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    child: AppButton(
+                      label: '저장 완료',
+                      onPressed: () =>
+                          Navigator.pop(context, titleController.text),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 24),
-            Text('기록 저장', style: AppTypography.headlineMedium),
-            const SizedBox(height: 20),
-            TextField(
-              controller: titleController,
-              autofocus: true,
-              decoration: const InputDecoration(hintText: '기록 제목 입력'),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: AppButton(
-                label: '저장 완료',
-                onPressed: () => Navigator.pop(context, titleController.text),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
