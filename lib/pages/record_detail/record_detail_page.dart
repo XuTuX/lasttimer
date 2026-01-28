@@ -144,12 +144,38 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
   }
 
   Widget _buildQuestionList(ExamDb exam, double avg) {
+    // 빠른/느린 문항 카운트
+    int fastCount = 0;
+    int slowCount = 0;
+    for (final sec in exam.questionSeconds) {
+      if (sec < avg * 0.7) {
+        fastCount++;
+      } else if (sec > avg * 1.5) {
+        slowCount++;
+      }
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 12),
-          child: Text('문항별 시간', style: AppTypography.headlineSmall),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('문항별 시간', style: AppTypography.headlineSmall),
+              // 요약 배지
+              Row(
+                children: [
+                  if (fastCount > 0)
+                    _buildBadge('빠름 $fastCount', AppColors.success),
+                  if (fastCount > 0 && slowCount > 0) const SizedBox(width: 8),
+                  if (slowCount > 0)
+                    _buildBadge('지연 $slowCount', AppColors.warning),
+                ],
+              ),
+            ],
+          ),
         ),
         Container(
           decoration: BoxDecoration(
@@ -166,6 +192,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
             itemBuilder: (context, index) {
               final sec = exam.questionSeconds[index];
               final isSlow = sec > (avg * 1.5);
+              final isFast = sec < (avg * 0.7);
 
               return Container(
                 padding: const EdgeInsets.symmetric(
@@ -174,6 +201,8 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
                 ),
                 color: isSlow
                     ? AppColors.warningLight.withAlpha(100)
+                    : isFast
+                    ? AppColors.successLight.withAlpha(100)
                     : Colors.transparent,
                 child: Row(
                   children: [
@@ -183,6 +212,8 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
                       decoration: BoxDecoration(
                         color: isSlow
                             ? AppColors.warning.withAlpha(30)
+                            : isFast
+                            ? AppColors.success.withAlpha(30)
                             : AppColors.gray100,
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -192,6 +223,8 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
                         style: AppTypography.labelMedium.copyWith(
                           color: isSlow
                               ? AppColors.warning
+                              : isFast
+                              ? AppColors.success
                               : AppColors.textSecondary,
                           fontWeight: FontWeight.w600,
                         ),
@@ -203,31 +236,18 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
                       style: AppTypography.bodyLarge.copyWith(
                         color: isSlow
                             ? AppColors.warning
+                            : isFast
+                            ? AppColors.success
                             : AppColors.textPrimary,
-                        fontWeight: isSlow ? FontWeight.w600 : FontWeight.w400,
+                        fontWeight: (isSlow || isFast)
+                            ? FontWeight.w600
+                            : FontWeight.w400,
                         fontFeatures: const [FontFeature.tabularFigures()],
                       ),
                     ),
                     const Spacer(),
-                    if (isSlow)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.warning.withAlpha(20),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          '지연',
-                          style: AppTypography.caption.copyWith(
-                            color: AppColors.warning,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 10,
-                          ),
-                        ),
-                      ),
+                    if (isSlow) _buildStatusChip('지연', AppColors.warning),
+                    if (isFast) _buildStatusChip('빠름', AppColors.success),
                   ],
                 ),
               );
@@ -235,6 +255,42 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildBadge(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withAlpha(20),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        text,
+        style: AppTypography.caption.copyWith(
+          color: color,
+          fontWeight: FontWeight.w600,
+          fontSize: 11,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusChip(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withAlpha(20),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        text,
+        style: AppTypography.caption.copyWith(
+          color: color,
+          fontWeight: FontWeight.w600,
+          fontSize: 10,
+        ),
+      ),
     );
   }
 

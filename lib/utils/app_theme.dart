@@ -48,6 +48,20 @@ class AppTheme {
         ),
       ),
 
+      // TabBar - 프리미엄 스타일
+      tabBarTheme: TabBarThemeData(
+        labelColor: AppColors.primary,
+        unselectedLabelColor: AppColors.textTertiary,
+        labelStyle: AppTypography.labelLarge.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
+        unselectedLabelStyle: AppTypography.labelMedium,
+        indicatorColor: AppColors.primary,
+        indicatorSize: TabBarIndicatorSize.tab,
+        dividerColor: Colors.transparent,
+        overlayColor: WidgetStateProperty.all(AppColors.gray100),
+      ),
+
       // Buttons - Clean
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -175,16 +189,26 @@ class AppTheme {
         labelSmall: AppTypography.caption,
       ),
 
-      // Snackbar
+      // Snackbar - 프리미엄 스타일
       snackBarTheme: SnackBarThemeData(
         backgroundColor: AppColors.gray900,
         contentTextStyle: AppTypography.bodyMedium.copyWith(
           color: Colors.white,
         ),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
         behavior: SnackBarBehavior.floating,
+        elevation: 8,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      ),
+
+      // 페이지 전환 애니메이션
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+        },
       ),
     );
   }

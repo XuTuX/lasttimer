@@ -81,8 +81,18 @@ class TimerController extends GetxController {
     stopTimer();
     isTimerFinished.value = true;
     finishReason.value = '시간 종료';
+
+    // 현재 진행 중인 문항 기록
     if (currentLapSeconds > 0) {
       recordLap();
+    }
+
+    // [수정] 남은 문항들을 0초로 기록하여 분석에 포함
+    final remainingCount = mockQuestionCount - laps.length;
+    if (remainingCount > 0) {
+      for (int i = 0; i < remainingCount; i++) {
+        laps.add(0);
+      }
     }
   }
 
@@ -100,7 +110,11 @@ class TimerController extends GetxController {
     }
     stopTimer();
     isTimerFinished.value = true;
-    finishReason.value = '조기 종료 ($completedQuestions문항)';
+    if (isMockMode) {
+      finishReason.value = '조기 종료 ($completedQuestions문항)';
+    } else {
+      finishReason.value = '공부 완료 ($completedQuestions문항)';
+    }
   }
 
   void resetTimer() {
@@ -144,6 +158,16 @@ class TimerController extends GetxController {
       recordLap();
     }
 
+    // [수정] 모의고사인 경우 남은 문항들을 0초로 채움
+    if (isMockMode) {
+      final remainingCount = mockQuestionCount - laps.length;
+      if (remainingCount > 0) {
+        for (int i = 0; i < remainingCount; i++) {
+          laps.add(0);
+        }
+      }
+    }
+
     isSaving.value = true;
     final now = DateTime.now();
 
@@ -168,10 +192,9 @@ class TimerController extends GetxController {
       });
 
       Get.back();
-      Get.snackbar('성공', '기록이 저장되었습니다.');
       resetTimer();
     } catch (e) {
-      Get.snackbar('오류', '저장 실패: $e');
+      // Error handling without snackbar
     } finally {
       isSaving.value = false;
     }

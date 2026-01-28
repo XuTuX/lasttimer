@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:last_timer/components/components.dart';
 import 'package:last_timer/database/exam_db.dart';
@@ -38,26 +39,10 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
 
         if (!hasExams) {
           // [이슈 2] Empty state에는 버튼 없음 - 하단 고정 CTA 사용
-          return Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.history_outlined,
-                  size: 48,
-                  color: AppColors.gray400,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  '기록이 없습니다',
-                  style: AppTypography.bodyLarge.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text('시작 버튼을 눌러 첫 기록을 남겨보세요', style: AppTypography.bodySmall),
-              ],
-            ),
+          return _AnimatedEmptyState(
+            icon: Icons.history_outlined,
+            title: '기록이 없습니다',
+            subtitle: '시작 버튼을 눌러 첫 기록을 남겨보세요',
           );
         }
 
@@ -82,8 +67,10 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
             const SizedBox(height: 12),
 
             // Exam list
-            ...controller.exams.map(
-              (exam) => Padding(
+            ...controller.exams.asMap().entries.map((entry) {
+              final index = entry.key;
+              final exam = entry.value;
+              return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: ExamHistoryCard(
                   title: exam.title,
@@ -91,9 +78,10 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
                   totalTime: formatSeconds(exam.totalSeconds),
                   onTap: () => _goToRecordDetail(exam),
                   onDelete: () => controller.deleteExam(exam.id),
+                  showSwipeHint: index == 0, // 첫 번째 카드에만 힌트 표시
                 ),
-              ),
-            ),
+              );
+            }),
 
             const SizedBox(height: 100),
           ],
@@ -101,40 +89,12 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
       }),
       // [이슈 2] 하단 고정 CTA - 항상 표시
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: Container(
-        height: 52,
-        margin: const EdgeInsets.symmetric(horizontal: 32),
-        child: ElevatedButton(
-          onPressed: () => Get.toNamed(Routes.timer),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            foregroundColor: Colors.white,
-            elevation: 0,
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                controller.isMock
-                    ? Icons.timer_outlined
-                    : Icons.play_arrow_rounded,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                controller.isMock ? '모의고사 시작' : '공부 시작',
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
+      floatingActionButton: _PremiumFAB(
+        label: controller.isMock ? '모의고사 시작' : '공부 시작',
+        icon: controller.isMock
+            ? Icons.timer_outlined
+            : Icons.play_arrow_rounded,
+        onPressed: () => Get.toNamed(Routes.timer),
       ),
     );
   }
@@ -431,5 +391,196 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
     } else {
       return '$seconds초';
     }
+  }
+}
+
+/// 프리미엄 FAB 버튼 - 그림자, 눌림 효과, 햅틱 피드백
+class _PremiumFAB extends StatefulWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  const _PremiumFAB({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  @override
+  State<_PremiumFAB> createState() => _PremiumFABState();
+}
+
+class _PremiumFABState extends State<_PremiumFAB>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 100),
+      vsync: this,
+    );
+    _scale = Tween<double>(
+      begin: 1.0,
+      end: 0.96,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onTapDown(TapDownDetails details) {
+    _controller.forward();
+  }
+
+  void _onTapUp(TapUpDetails details) {
+    _controller.reverse();
+    HapticFeedback.lightImpact();
+    widget.onPressed();
+  }
+
+  void _onTapCancel() {
+    _controller.reverse();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _scale,
+      builder: (context, child) =>
+          Transform.scale(scale: _scale.value, child: child),
+      child: GestureDetector(
+        onTapDown: _onTapDown,
+        onTapUp: _onTapUp,
+        onTapCancel: _onTapCancel,
+        child: Container(
+          height: 52,
+          margin: const EdgeInsets.symmetric(horizontal: 32),
+          decoration: BoxDecoration(
+            color: AppColors.primary,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withAlpha(80),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+              BoxShadow(
+                color: Colors.black.withAlpha(20),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(widget.icon, size: 20, color: Colors.white),
+              const SizedBox(width: 8),
+              Text(
+                widget.label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 애니메이션 적용된 Empty State
+class _AnimatedEmptyState extends StatefulWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  const _AnimatedEmptyState({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  State<_AnimatedEmptyState> createState() => _AnimatedEmptyStateState();
+}
+
+class _AnimatedEmptyStateState extends State<_AnimatedEmptyState>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOut,
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppColors.gray50,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(widget.icon, size: 40, color: AppColors.gray400),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                widget.title,
+                style: AppTypography.bodyLarge.copyWith(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                widget.subtitle,
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppColors.textTertiary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

@@ -56,15 +56,12 @@ class _TimerPageState extends State<TimerPage> with TickerProviderStateMixin {
               final hasStarted = controller.timerElapsedSeconds.value > 0;
               final isFinished = controller.isTimerFinished.value;
 
-              // [수정] 실행 중일 때는 숨기고, 일시정지 상태에서만 '종료' 버튼 노출
-              if (!isFinished &&
-                  !isRunning &&
-                  hasStarted &&
-                  controller.isMockMode) {
+              // [수정] 실행 중일 때는 숨기고, 일시정지 상태에서만 즉시 '저장' 시트로 이동
+              if (!isFinished && !isRunning && hasStarted) {
                 return TextButton(
-                  onPressed: () => _confirmFinishEarly(),
+                  onPressed: () => _showSaveSheet(context),
                   child: Text(
-                    '종료',
+                    controller.isMockMode ? '종료' : '저장',
                     style: AppTypography.labelMedium.copyWith(
                       color: AppColors.error,
                     ),
@@ -175,13 +172,13 @@ class _TimerPageState extends State<TimerPage> with TickerProviderStateMixin {
             Text(
               'QUESTION ${controller.currentQuestionNumber.toString().padLeft(2, '0')}',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 18,
                 fontWeight: FontWeight.w700,
-                letterSpacing: 2.0,
+                letterSpacing: 3.0,
                 color: AppColors.textTertiary.withAlpha(180),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
           ],
 
           // 메인 시간 (가장 크게)
@@ -195,7 +192,7 @@ class _TimerPageState extends State<TimerPage> with TickerProviderStateMixin {
             ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
           // 현재 문항 소요 시간 (메인 시간 아래에 작게)
           if (!isFinished)
@@ -204,8 +201,8 @@ class _TimerPageState extends State<TimerPage> with TickerProviderStateMixin {
               child: _RollingTimeDisplay(
                 seconds: controller.currentLapSeconds,
                 style: AppTypography.bodyLarge.copyWith(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w400,
+                  fontSize: 36,
+                  fontWeight: FontWeight.w300,
                   color: AppColors.textSecondary,
                   letterSpacing: 1.0,
                   fontFeatures: const [FontFeature.tabularFigures()],
@@ -273,59 +270,26 @@ class _TimerPageState extends State<TimerPage> with TickerProviderStateMixin {
 
   /// 하단 컨트롤바
   Widget _buildBottomControls(BuildContext context) {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
     return Container(
-      padding: const EdgeInsets.fromLTRB(40, 20, 40, 64),
+      padding: EdgeInsets.fromLTRB(40, 20, 40, 32 + bottomPadding),
       child: Obx(() {
         final isRunning = controller.isTimerRunning.value;
         final isFinished = controller.isTimerFinished.value;
 
         if (isFinished) {
-          return SizedBox(
-            width: double.infinity,
-            child: AppButton(
-              label: '기록 저장',
-              onPressed: () => _showSaveSheet(context),
-            ),
-          );
+          return _PremiumSaveButton(onPressed: () => _showSaveSheet(context));
         }
 
-        return GestureDetector(
-          onTap: () {
+        return _PlayPauseButton(
+          isRunning: isRunning,
+          onPressed: () {
             HapticFeedback.mediumImpact();
             isRunning ? controller.stopTimer() : controller.startTimer();
           },
-          child: AnimatedContainer(
-            duration: AppDurations.medium,
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              color: isRunning ? Colors.transparent : AppColors.textPrimary,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: isRunning ? AppColors.gray200 : AppColors.textPrimary,
-                width: 1.5,
-              ),
-            ),
-            child: Icon(
-              isRunning ? Icons.pause_rounded : Icons.play_arrow_rounded,
-              size: 32,
-              color: isRunning ? AppColors.textPrimary : Colors.white,
-            ),
-          ),
         );
       }),
     );
-  }
-
-  // 기존 헬퍼 메서드들 (생략하지 않고 유지)
-  Future<void> _confirmFinishEarly() async {
-    final confirmed = await AppDialog.showConfirm(
-      title: '시험을 종료할까요?',
-      message: '현재까지 기록된 내용으로 시험을 조기 종료합니다.',
-      confirmLabel: '종료',
-      cancelLabel: '계속하기',
-    );
-    if (confirmed) controller.finishEarly();
   }
 
   Future<String?> _showExitOptions() async {
@@ -337,41 +301,48 @@ class _TimerPageState extends State<TimerPage> with TickerProviderStateMixin {
           color: AppColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: Stack(
           children: [
-            Container(
-              width: 32,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.gray200,
-                borderRadius: BorderRadius.circular(2),
-              ),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 32,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.gray200,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text('기록을 어떻게 할까요?', style: AppTypography.headlineMedium),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  child: AppButton(
+                    label: '기록 저장하고 종료',
+                    onPressed: () => Navigator.pop(context, 'save'),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: AppButton(
+                    label: '저장하지 않고 나가기',
+                    variant: AppButtonVariant.secondary,
+                    onPressed: () => Navigator.pop(context, 'discard'),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
             ),
-            const SizedBox(height: 24),
-            Text('저장되지 않은 기록이 있습니다', style: AppTypography.headlineMedium),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              child: AppButton(
-                label: '기록 저장하고 나가기',
-                onPressed: () => Navigator.pop(context, 'save'),
+            Positioned(
+              right: 0,
+              top: 0,
+              child: IconButton(
+                icon: const Icon(Icons.close_rounded, color: AppColors.gray400),
+                onPressed: () => Navigator.pop(context),
               ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: AppButton(
-                label: '저장하지 않기',
-                variant: AppButtonVariant.secondary,
-                onPressed: () => Navigator.pop(context, 'discard'),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('취소'),
             ),
           ],
         ),
@@ -485,6 +456,196 @@ class _RollingTimeDisplay extends StatelessWidget {
           child: Text(char, key: ValueKey('time_${index}_$char'), style: style),
         );
       }),
+    );
+  }
+}
+
+/// 프리미엄 재생/일시정지 버튼
+class _PlayPauseButton extends StatefulWidget {
+  final bool isRunning;
+  final VoidCallback onPressed;
+
+  const _PlayPauseButton({required this.isRunning, required this.onPressed});
+
+  @override
+  State<_PlayPauseButton> createState() => _PlayPauseButtonState();
+}
+
+class _PlayPauseButtonState extends State<_PlayPauseButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _scaleController;
+  late Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _scaleController = AnimationController(
+      duration: const Duration(milliseconds: 80),
+      vsync: this,
+    );
+    _scale = Tween<double>(begin: 1.0, end: 0.92).animate(
+      CurvedAnimation(parent: _scaleController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _scaleController.dispose();
+    super.dispose();
+  }
+
+  void _onTapDown(TapDownDetails details) {
+    _scaleController.forward();
+  }
+
+  void _onTapUp(TapUpDetails details) {
+    _scaleController.reverse();
+    widget.onPressed();
+  }
+
+  void _onTapCancel() {
+    _scaleController.reverse();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _scale,
+      builder: (context, child) =>
+          Transform.scale(scale: _scale.value, child: child),
+      child: GestureDetector(
+        onTapDown: _onTapDown,
+        onTapUp: _onTapUp,
+        onTapCancel: _onTapCancel,
+        child: AnimatedContainer(
+          duration: AppDurations.medium,
+          width: 72,
+          height: 72,
+          decoration: BoxDecoration(
+            color: widget.isRunning
+                ? Colors.transparent
+                : AppColors.textPrimary,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: widget.isRunning
+                  ? AppColors.gray300
+                  : AppColors.textPrimary,
+              width: 2,
+            ),
+            boxShadow: widget.isRunning
+                ? []
+                : [
+                    BoxShadow(
+                      color: AppColors.textPrimary.withAlpha(40),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+          ),
+          child: AnimatedSwitcher(
+            duration: AppDurations.fast,
+            child: Icon(
+              widget.isRunning ? Icons.pause_rounded : Icons.play_arrow_rounded,
+              key: ValueKey(widget.isRunning),
+              size: 32,
+              color: widget.isRunning ? AppColors.textPrimary : Colors.white,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 프리미엄 저장 버튼
+class _PremiumSaveButton extends StatefulWidget {
+  final VoidCallback onPressed;
+
+  const _PremiumSaveButton({required this.onPressed});
+
+  @override
+  State<_PremiumSaveButton> createState() => _PremiumSaveButtonState();
+}
+
+class _PremiumSaveButtonState extends State<_PremiumSaveButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 100),
+      vsync: this,
+    );
+    _scale = Tween<double>(
+      begin: 1.0,
+      end: 0.96,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onTapDown(TapDownDetails details) {
+    _controller.forward();
+  }
+
+  void _onTapUp(TapUpDetails details) {
+    _controller.reverse();
+    HapticFeedback.lightImpact();
+    widget.onPressed();
+  }
+
+  void _onTapCancel() {
+    _controller.reverse();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _scale,
+      builder: (context, child) =>
+          Transform.scale(scale: _scale.value, child: child),
+      child: GestureDetector(
+        onTapDown: _onTapDown,
+        onTapUp: _onTapUp,
+        onTapCancel: _onTapCancel,
+        child: Container(
+          width: double.infinity,
+          height: 52,
+          decoration: BoxDecoration(
+            color: AppColors.primary,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withAlpha(80),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+              BoxShadow(
+                color: Colors.black.withAlpha(20),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: const Center(
+            child: Text(
+              '기록 저장',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:last_timer/database/exam_db.dart';
 import 'package:last_timer/database/isar_service.dart';
@@ -38,9 +39,22 @@ class RecordDetailController extends GetxController {
         await _isarService.isar.examDbs.put(currentExam);
       });
       memo.value = newMemo;
-      Get.snackbar('저장됨', '메모가 저장되었습니다.');
+      Get.snackbar(
+        '저장 완료',
+        '메모가 저장되었습니다.',
+        backgroundColor: const Color(0xFF2E7D32),
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 2),
+      );
     } catch (e) {
-      Get.snackbar('오류', '메모 저장 실패: $e');
+      Get.snackbar(
+        '저장 실패',
+        '다시 시도해 주세요.',
+        backgroundColor: const Color(0xFFD32F2F),
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+      );
     } finally {
       isSaving.value = false;
     }
@@ -52,6 +66,13 @@ class RecordDetailController extends GetxController {
       await _isarService.isar.examDbs.delete(examId);
     });
     Get.back();
-    Get.snackbar('삭제됨', '기록이 삭제되었습니다.');
+    Get.snackbar(
+      '삭제 완료',
+      '기록이 삭제되었습니다.',
+      backgroundColor: const Color(0xFF424242),
+      colorText: Colors.white,
+      margin: const EdgeInsets.all(16),
+      duration: const Duration(seconds: 2),
+    );
   }
 }

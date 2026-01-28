@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:last_timer/components/components.dart';
 import 'package:last_timer/database/subject_db.dart';
@@ -21,13 +22,7 @@ class SubjectListPage extends GetView<SubjectController> {
               Tab(text: '모의고사'),
               Tab(text: '일반공부'),
             ],
-            labelStyle: AppTypography.labelLarge,
-            unselectedLabelStyle: AppTypography.labelMedium,
-            indicatorColor: AppColors.primary,
             indicatorWeight: 3,
-            indicatorSize: TabBarIndicatorSize.tab,
-            labelColor: AppColors.primary,
-            unselectedLabelColor: AppColors.textTertiary,
           ),
         ),
         body: Obx(() {
@@ -40,28 +35,11 @@ class SubjectListPage extends GetView<SubjectController> {
         }),
         // [이슈 2] 하단 고정 CTA - Empty State 유무와 상관없이 고정 노출 (중복 제거)
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-        floatingActionButton: Container(
-          height: 52,
-          margin: const EdgeInsets.symmetric(horizontal: 32),
-          child: ElevatedButton(
+        floatingActionButton: Builder(
+          builder: (context) => _PremiumFAB(
+            label: '새 과목 추가',
+            icon: Icons.add_rounded,
             onPressed: () => _showAddDialog(context),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              elevation: 4,
-              shadowColor: Colors.black.withAlpha(50),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.add_rounded, size: 20),
-                SizedBox(width: 8),
-                Text('새 과목 추가', style: TextStyle(fontWeight: FontWeight.w600)),
-              ],
-            ),
           ),
         ),
       ),
@@ -71,26 +49,10 @@ class SubjectListPage extends GetView<SubjectController> {
   Widget _buildSubjectList(List<SubjectDb> subjects, {required bool isMock}) {
     if (subjects.isEmpty) {
       // [이슈 2] Empty state 내부에서는 버튼 제거 (문구만 표시)
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isMock ? Icons.timer_outlined : Icons.book_outlined,
-              size: 48,
-              color: AppColors.gray300,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              isMock ? '등록된 모의고사가 없습니다' : '등록된 공부 과목이 없습니다',
-              style: AppTypography.bodyLarge.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text('하단 버튼을 눌러 새 과목을 추가해보세요', style: AppTypography.bodySmall),
-          ],
-        ),
+      return _AnimatedEmptyState(
+        icon: isMock ? Icons.timer_outlined : Icons.book_outlined,
+        title: isMock ? '등록된 모의고사가 없습니다' : '등록된 공부 과목이 없습니다',
+        subtitle: '하단 버튼을 눌러 새 과목을 추가해보세요',
       );
     }
 
@@ -583,6 +545,197 @@ class _HandleBar extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.gray200,
         borderRadius: BorderRadius.circular(2),
+      ),
+    );
+  }
+}
+
+/// 프리미엄 FAB 버튼 - 그림자, 눌림 효과, 햅틱 피드백
+class _PremiumFAB extends StatefulWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  const _PremiumFAB({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  @override
+  State<_PremiumFAB> createState() => _PremiumFABState();
+}
+
+class _PremiumFABState extends State<_PremiumFAB>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 100),
+      vsync: this,
+    );
+    _scale = Tween<double>(
+      begin: 1.0,
+      end: 0.96,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onTapDown(TapDownDetails details) {
+    _controller.forward();
+  }
+
+  void _onTapUp(TapUpDetails details) {
+    _controller.reverse();
+    HapticFeedback.lightImpact();
+    widget.onPressed();
+  }
+
+  void _onTapCancel() {
+    _controller.reverse();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _scale,
+      builder: (context, child) =>
+          Transform.scale(scale: _scale.value, child: child),
+      child: GestureDetector(
+        onTapDown: _onTapDown,
+        onTapUp: _onTapUp,
+        onTapCancel: _onTapCancel,
+        child: Container(
+          height: 52,
+          margin: const EdgeInsets.symmetric(horizontal: 32),
+          decoration: BoxDecoration(
+            color: AppColors.primary,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withAlpha(80),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+              BoxShadow(
+                color: Colors.black.withAlpha(20),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(widget.icon, size: 20, color: Colors.white),
+              const SizedBox(width: 8),
+              Text(
+                widget.label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 애니메이션 적용된 Empty State
+class _AnimatedEmptyState extends StatefulWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  const _AnimatedEmptyState({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  State<_AnimatedEmptyState> createState() => _AnimatedEmptyStateState();
+}
+
+class _AnimatedEmptyStateState extends State<_AnimatedEmptyState>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOut,
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppColors.gray50,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(widget.icon, size: 40, color: AppColors.gray400),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                widget.title,
+                style: AppTypography.bodyLarge.copyWith(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                widget.subtitle,
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppColors.textTertiary,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

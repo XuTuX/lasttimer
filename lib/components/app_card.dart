@@ -186,6 +186,7 @@ class ExamHistoryCard extends StatelessWidget {
   final String totalTime;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
+  final bool showSwipeHint;
 
   const ExamHistoryCard({
     super.key,
@@ -194,6 +195,7 @@ class ExamHistoryCard extends StatelessWidget {
     required this.totalTime,
     this.onTap,
     this.onDelete,
+    this.showSwipeHint = false,
   });
 
   @override
@@ -207,41 +209,96 @@ class ExamHistoryCard extends StatelessWidget {
       confirmDismiss: (_) async => true,
       background: Container(
         alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 16),
+        padding: const EdgeInsets.only(right: 20),
         decoration: BoxDecoration(
-          color: AppColors.error,
+          gradient: LinearGradient(
+            colors: [
+              AppColors.error.withAlpha(0),
+              AppColors.error.withAlpha(230),
+            ],
+          ),
           borderRadius: AppRadius.lgRadius,
         ),
-        child: const Icon(Icons.delete_outline, color: Colors.white, size: 20),
-      ),
-      child: AppCard(
-        onTap: onTap,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: AppTypography.bodyLarge.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '$questionCount문항 · $totalTime',
-                    style: AppTypography.caption,
-                  ),
-                ],
-              ),
+            const Icon(Icons.delete_outline, color: Colors.white, size: 20),
+            const SizedBox(width: 4),
+            Text(
+              '삭제',
+              style: AppTypography.labelMedium.copyWith(color: Colors.white),
             ),
-            Icon(Icons.chevron_right, color: AppColors.gray400, size: 18),
           ],
         ),
+      ),
+      child: Stack(
+        children: [
+          AppCard(
+            onTap: onTap,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: AppTypography.bodyLarge.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '$questionCount문항 · $totalTime',
+                        style: AppTypography.caption,
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right, color: AppColors.gray400, size: 18),
+              ],
+            ),
+          ),
+          // 스와이프 힌트 (선택적)
+          if (showSwipeHint && onDelete != null)
+            Positioned(
+              right: 8,
+              top: 0,
+              bottom: 0,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.gray100,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.arrow_back_ios_rounded,
+                        size: 10,
+                        color: AppColors.textTertiary,
+                      ),
+                      Text(
+                        '스와이프',
+                        style: AppTypography.caption.copyWith(
+                          fontSize: 9,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
