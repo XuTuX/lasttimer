@@ -12,7 +12,7 @@ class AppTheme {
         error: AppColors.error,
       ),
       scaffoldBackgroundColor: AppColors.background,
-      fontFamily: AppTypography.bodyMedium.fontFamily,
+      fontFamily: AppTypography.fontFamily,
 
       // AppBar - Clean, minimal
       appBarTheme: AppBarTheme(
