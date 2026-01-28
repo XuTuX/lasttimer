@@ -16,10 +16,7 @@ class SubjectListPage extends GetView<SubjectController> {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text(
-            'MOMENTUM',
-            style: TextStyle(letterSpacing: 2.0, fontWeight: FontWeight.w800),
-          ),
+          title: const Text('MOMENTUM'),
           bottom: TabBar(
             tabs: const [
               Tab(text: '모의고사'),

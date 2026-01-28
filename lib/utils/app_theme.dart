@@ -12,18 +12,19 @@ class AppTheme {
         error: AppColors.error,
       ),
       scaffoldBackgroundColor: AppColors.background,
+      fontFamily: AppTypography.bodyMedium.fontFamily,
 
       // AppBar - Clean, minimal
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: AppColors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: TextStyle(
+        titleTextStyle: AppTypography.headlineMedium.copyWith(
           color: AppColors.textPrimary,
-          fontSize: 17,
-          fontWeight: FontWeight.w600,
-          letterSpacing: -0.2,
+          fontSize: 18,
+          letterSpacing: 2.0,
+          fontWeight: FontWeight.w800,
         ),
         iconTheme: IconThemeData(color: AppColors.textPrimary, size: 22),
       ),
@@ -178,7 +179,7 @@ class AppTheme {
       ),
 
       // Text
-      textTheme: const TextTheme(
+      textTheme: TextTheme(
         displayLarge: AppTypography.displayLarge,
         displayMedium: AppTypography.displayMedium,
         headlineLarge: AppTypography.headlineLarge,

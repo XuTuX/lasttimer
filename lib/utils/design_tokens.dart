@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// Design tokens for consistent styling across the app
 /// Premium black & white minimal aesthetic
@@ -79,59 +80,59 @@ class AppColors {
 
 class AppTypography {
   // Display - Timer numbers
-  static const TextStyle displayLarge = TextStyle(
+  static TextStyle displayLarge = GoogleFonts.montserrat(
     fontSize: 64,
     fontWeight: FontWeight.w300,
     letterSpacing: -2,
     color: AppColors.textPrimary,
-    fontFeatures: [FontFeature.tabularFigures()],
+    fontFeatures: const [FontFeature.tabularFigures()],
   );
 
-  static const TextStyle displayMedium = TextStyle(
+  static TextStyle displayMedium = GoogleFonts.montserrat(
     fontSize: 40,
     fontWeight: FontWeight.w300,
     letterSpacing: -1,
     color: AppColors.textPrimary,
-    fontFeatures: [FontFeature.tabularFigures()],
+    fontFeatures: const [FontFeature.tabularFigures()],
   );
 
   // Headings
-  static const TextStyle headlineLarge = TextStyle(
+  static TextStyle headlineLarge = GoogleFonts.montserrat(
     fontSize: 22,
     fontWeight: FontWeight.w600,
     letterSpacing: -0.3,
     color: AppColors.textPrimary,
   );
 
-  static const TextStyle headlineMedium = TextStyle(
+  static TextStyle headlineMedium = GoogleFonts.montserrat(
     fontSize: 18,
     fontWeight: FontWeight.w600,
     letterSpacing: -0.2,
     color: AppColors.textPrimary,
   );
 
-  static const TextStyle headlineSmall = TextStyle(
+  static TextStyle headlineSmall = GoogleFonts.montserrat(
     fontSize: 16,
     fontWeight: FontWeight.w600,
     color: AppColors.textPrimary,
   );
 
   // Body
-  static const TextStyle bodyLarge = TextStyle(
+  static TextStyle bodyLarge = GoogleFonts.montserrat(
     fontSize: 15,
     fontWeight: FontWeight.w400,
     color: AppColors.textPrimary,
     height: 1.5,
   );
 
-  static const TextStyle bodyMedium = TextStyle(
+  static TextStyle bodyMedium = GoogleFonts.montserrat(
     fontSize: 14,
     fontWeight: FontWeight.w400,
     color: AppColors.textSecondary,
     height: 1.5,
   );
 
-  static const TextStyle bodySmall = TextStyle(
+  static TextStyle bodySmall = GoogleFonts.montserrat(
     fontSize: 13,
     fontWeight: FontWeight.w400,
     color: AppColors.textSecondary,
@@ -139,32 +140,32 @@ class AppTypography {
   );
 
   // Labels
-  static const TextStyle labelLarge = TextStyle(
+  static TextStyle labelLarge = GoogleFonts.montserrat(
     fontSize: 14,
     fontWeight: FontWeight.w500,
     color: AppColors.textPrimary,
   );
 
-  static const TextStyle labelMedium = TextStyle(
+  static TextStyle labelMedium = GoogleFonts.montserrat(
     fontSize: 13,
     fontWeight: FontWeight.w500,
     color: AppColors.textPrimary,
   );
 
-  static const TextStyle caption = TextStyle(
+  static TextStyle caption = GoogleFonts.montserrat(
     fontSize: 12,
     fontWeight: FontWeight.w400,
     color: AppColors.textTertiary,
   );
 
   // Button
-  static const TextStyle button = TextStyle(
+  static TextStyle button = GoogleFonts.montserrat(
     fontSize: 14,
     fontWeight: FontWeight.w500,
     color: AppColors.textOnPrimary,
   );
 
-  static const TextStyle buttonSmall = TextStyle(
+  static TextStyle buttonSmall = GoogleFonts.montserrat(
     fontSize: 13,
     fontWeight: FontWeight.w500,
     color: AppColors.textOnPrimary,
