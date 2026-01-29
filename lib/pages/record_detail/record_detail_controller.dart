@@ -60,6 +60,37 @@ class RecordDetailController extends GetxController {
     }
   }
 
+  /// 기록 이름 변경
+  Future<void> renameExam(String newTitle) async {
+    final currentExam = exam.value;
+    if (currentExam == null) return;
+
+    try {
+      currentExam.title = newTitle.trim();
+      await _isarService.isar.writeTxn(() async {
+        await _isarService.isar.examDbs.put(currentExam);
+      });
+      exam.value = currentExam;
+      exam.refresh(); // UI 갱신 강제
+      Get.snackbar(
+        '수정 완료',
+        '기록 이름이 변경되었습니다.',
+        backgroundColor: const Color(0xFF2E7D32),
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 2),
+      );
+    } catch (e) {
+      Get.snackbar(
+        '수정 실패',
+        '다시 시도해 주세요.',
+        backgroundColor: const Color(0xFFD32F2F),
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+      );
+    }
+  }
+
   /// 기록 삭제
   Future<void> deleteExam() async {
     await _isarService.isar.writeTxn(() async {

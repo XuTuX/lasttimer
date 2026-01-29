@@ -4,6 +4,8 @@ import 'package:get/get.dart';
 import 'package:last_timer/components/components.dart';
 import 'package:last_timer/database/exam_db.dart';
 import 'package:last_timer/pages/subject_detail/subject_detail_controller.dart';
+import 'package:last_timer/pages/subjects/subject_controller.dart';
+import 'package:last_timer/pages/subjects/subject_modals.dart';
 import 'package:last_timer/utils/design_tokens.dart';
 import 'package:last_timer/utils/seconds_format.dart';
 import 'package:last_timer/routes/app_routes.dart';
@@ -33,6 +35,18 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
     return Scaffold(
       appBar: AppBar(
         title: Obx(() => Text(controller.subject.value?.subjectName ?? '분석')),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.more_vert_rounded),
+            onPressed: () {
+              final subject = controller.subject.value;
+              if (subject != null) {
+                _showSubjectOptions(context, subject);
+              }
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Obx(() {
         final hasExams = controller.exams.isNotEmpty;
@@ -57,7 +71,10 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('기록', style: AppTypography.headlineSmall),
+                Text(
+                  controller.isMock ? '시험 히스토리' : '학습 히스토리',
+                  style: AppTypography.headlineSmall,
+                ),
                 Text(
                   '${controller.totalExams}개',
                   style: AppTypography.bodySmall,
@@ -103,6 +120,87 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
     Get.toNamed(Routes.recordDetail, arguments: exam.id);
   }
 
+  void _showSubjectOptions(BuildContext context, var subject) {
+    AppMenuBottomSheet.show(
+      options: [
+        AppBottomSheetOption(
+          icon: Icons.edit_outlined,
+          label: '이름 수정',
+          onTap: () {
+            Get.back();
+            _showRenameDialog(context, subject.id, subject.subjectName);
+          },
+        ),
+        if (subject.isMock)
+          AppBottomSheetOption(
+            icon: Icons.settings_outlined,
+            label: '시험 설정',
+            onTap: () {
+              Get.back();
+              _showMockSettingsDialog(context, subject);
+            },
+          ),
+        AppBottomSheetOption(
+          icon: Icons.delete_outline,
+          label: '과목 삭제',
+          iconColor: AppColors.error,
+          textColor: AppColors.error,
+          onTap: () {
+            Get.back();
+            _confirmDelete(context, subject.id);
+          },
+        ),
+      ],
+    );
+  }
+
+  void _showRenameDialog(
+    BuildContext context,
+    int id,
+    String currentName,
+  ) async {
+    final newName = await AppInputDialog.show(
+      title: '이름 수정',
+      hint: '과목 이름',
+      initialValue: currentName,
+      confirmLabel: '저장',
+    );
+    if (newName != null && newName.isNotEmpty) {
+      await Get.find<SubjectController>().renameSubject(id, newName);
+    }
+  }
+
+  void _showMockSettingsDialog(BuildContext context, var subject) async {
+    final result = await showModalBottomSheet<MockSettingsResult>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => MockSettingsSheet(subject: subject),
+    );
+
+    if (result != null) {
+      await Get.find<SubjectController>().updateMockSettings(
+        id: subject.id,
+        timeSeconds: result.timeSeconds,
+        questionCount: result.questionCount,
+      );
+    }
+  }
+
+  void _confirmDelete(BuildContext context, int id) async {
+    final confirmed = await AppDialog.showConfirm(
+      title: '과목을 삭제하시겠습니까?',
+      message: '모든 시험 기록도 함께 삭제됩니다.',
+      cancelLabel: '취소',
+      confirmLabel: '삭제',
+      isDanger: true,
+    );
+    if (confirmed) {
+      await Get.find<SubjectController>().deleteSubject(id);
+      Get.back(); // 상세 페이지에서 나감
+    }
+  }
+
   Widget _buildDashboard() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,7 +208,7 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 12),
           child: Text(
-            '분석',
+            '상세 분석',
             style: AppTypography.headlineMedium.copyWith(fontSize: 20),
           ),
         ),
@@ -308,7 +406,7 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 50,
+          height: 80, // 자막 공간 확보를 위해 높이 증가
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: List.generate(maxSlots, (index) {
@@ -316,17 +414,41 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
               if (dataIndex >= 0) {
                 final exam = recentExams[dataIndex];
                 final heightFactor = (maxVal > 0)
-                    ? (exam.totalSeconds / maxVal).clamp(0.2, 0.95)
-                    : 0.2;
+                    ? (exam.totalSeconds / maxVal).clamp(0.1, 0.8)
+                    : 0.1;
+
+                // 시간 포맷팅 (초 단위가 작으면 초만, 크면 분:초)
+                String displayTime;
+                if (exam.totalSeconds < 60) {
+                  displayTime = '${exam.totalSeconds}초';
+                } else {
+                  displayTime =
+                      '${exam.totalSeconds ~/ 60}:${(exam.totalSeconds % 60).toString().padLeft(2, '0')}';
+                }
+
                 return Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 2),
-                    child: Container(
-                      height: 45 * heightFactor,
-                      decoration: BoxDecoration(
-                        color: AppColors.accent,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(
+                          displayTime,
+                          style: AppTypography.caption.copyWith(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textTertiary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          height: 55 * heightFactor,
+                          decoration: BoxDecoration(
+                            color: AppColors.accent,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 );
