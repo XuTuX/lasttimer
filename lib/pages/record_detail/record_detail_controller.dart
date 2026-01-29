@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:last_timer/database/exam_db.dart';
 import 'package:last_timer/database/isar_service.dart';
@@ -10,8 +9,9 @@ class RecordDetailController extends GetxController {
   RecordDetailController(this.examId);
 
   final exam = Rxn<ExamDb>();
-  final memo = ''.obs;
+  final memos = <String>[].obs;
   final isSaving = false.obs;
+  final saveSuccess = false.obs;
 
   @override
   void onInit() {
@@ -23,41 +23,49 @@ class RecordDetailController extends GetxController {
     final loaded = await _isarService.isar.examDbs.get(examId);
     if (loaded != null) {
       exam.value = loaded;
-      memo.value = loaded.memo ?? '';
+      memos.value = List<String>.from(loaded.memos);
     }
   }
 
-  /// 메모 저장
-  Future<void> saveMemo(String newMemo) async {
+  /// 메모 추가
+  Future<void> addMemo(String text) async {
     final currentExam = exam.value;
-    if (currentExam == null) return;
+    if (currentExam == null || text.trim().isEmpty) return;
 
     isSaving.value = true;
     try {
-      currentExam.memo = newMemo.trim().isEmpty ? null : newMemo.trim();
+      final newMemo = text.trim();
+      currentExam.memos.add(newMemo);
+
       await _isarService.isar.writeTxn(() async {
         await _isarService.isar.examDbs.put(currentExam);
       });
-      memo.value = newMemo;
-      Get.snackbar(
-        '저장 완료',
-        '메모가 저장되었습니다.',
-        backgroundColor: const Color(0xFF2E7D32),
-        colorText: Colors.white,
-        margin: const EdgeInsets.all(16),
-        duration: const Duration(seconds: 2),
-      );
+
+      memos.value = List<String>.from(currentExam.memos);
+
+      // 저장 성공 시각적 피드백
+      saveSuccess.value = true;
+      Future.delayed(const Duration(seconds: 2), () {
+        saveSuccess.value = false;
+      });
     } catch (e) {
-      Get.snackbar(
-        '저장 실패',
-        '다시 시도해 주세요.',
-        backgroundColor: const Color(0xFFD32F2F),
-        colorText: Colors.white,
-        margin: const EdgeInsets.all(16),
-      );
     } finally {
       isSaving.value = false;
     }
+  }
+
+  /// 메모 삭제 (필요시)
+  Future<void> deleteMemo(int index) async {
+    final currentExam = exam.value;
+    if (currentExam == null) return;
+
+    try {
+      currentExam.memos.removeAt(index);
+      await _isarService.isar.writeTxn(() async {
+        await _isarService.isar.examDbs.put(currentExam);
+      });
+      memos.value = List<String>.from(currentExam.memos);
+    } catch (e) {}
   }
 
   /// 기록 이름 변경
@@ -72,23 +80,7 @@ class RecordDetailController extends GetxController {
       });
       exam.value = currentExam;
       exam.refresh(); // UI 갱신 강제
-      Get.snackbar(
-        '수정 완료',
-        '기록 이름이 변경되었습니다.',
-        backgroundColor: const Color(0xFF2E7D32),
-        colorText: Colors.white,
-        margin: const EdgeInsets.all(16),
-        duration: const Duration(seconds: 2),
-      );
-    } catch (e) {
-      Get.snackbar(
-        '수정 실패',
-        '다시 시도해 주세요.',
-        backgroundColor: const Color(0xFFD32F2F),
-        colorText: Colors.white,
-        margin: const EdgeInsets.all(16),
-      );
-    }
+    } catch (e) {}
   }
 
   /// 기록 삭제
@@ -97,13 +89,5 @@ class RecordDetailController extends GetxController {
       await _isarService.isar.examDbs.delete(examId);
     });
     Get.back();
-    Get.snackbar(
-      '삭제 완료',
-      '기록이 삭제되었습니다.',
-      backgroundColor: const Color(0xFF424242),
-      colorText: Colors.white,
-      margin: const EdgeInsets.all(16),
-      duration: const Duration(seconds: 2),
-    );
   }
 }

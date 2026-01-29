@@ -198,6 +198,7 @@ class ExamHistoryCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
   final bool showSwipeHint;
+  final bool hasMemo;
 
   const ExamHistoryCard({
     super.key,
@@ -207,6 +208,7 @@ class ExamHistoryCard extends StatelessWidget {
     this.onTap,
     this.onDelete,
     this.showSwipeHint = false,
+    this.hasMemo = false,
   });
 
   @override
@@ -280,13 +282,27 @@ class ExamHistoryCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: AppTypography.bodyLarge.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: AppTypography.bodyLarge.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (hasMemo) ...[
+                      const SizedBox(width: 8),
+                      Icon(
+                        Icons.sticky_note_2_rounded,
+                        size: 16,
+                        color: AppColors.accent.withAlpha(180),
+                      ),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 4),
                 Text(

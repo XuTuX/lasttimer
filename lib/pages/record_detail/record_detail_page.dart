@@ -28,13 +28,6 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
       tag: examId.toString(),
     );
     memoController = TextEditingController();
-
-    // 메모 초기화
-    ever(controller.memo, (memo) {
-      if (memoController.text != memo) {
-        memoController.text = memo;
-      }
-    });
   }
 
   @override
@@ -345,65 +338,125 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
     );
   }
 
-  Widget _buildStatusChip(String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withAlpha(20),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        text,
-        style: AppTypography.caption.copyWith(
-          color: color,
-          fontWeight: FontWeight.w600,
-          fontSize: 10,
-        ),
-      ),
-    );
-  }
-
   Widget _buildMemoSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 12),
-          child: Text('메모', style: AppTypography.headlineSmall),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('메모', style: AppTypography.headlineSmall),
+              Obx(() => Text(
+                '총 ${controller.memos.length}개',
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.textTertiary,
+                  fontSize: 11,
+                ),
+              )),
+            ],
+          ),
         ),
+        
+        // 기존 메모 리스트
+        Obx(() => Column(
+          children: controller.memos.asMap().entries.map((entry) {
+            final index = entry.key;
+            final memoText = entry.value;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.gray50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.gray100),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '메모 #${index + 1}',
+                          style: AppTypography.caption.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textTertiary,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => controller.deleteMemo(index),
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: 14,
+                            color: AppColors.gray400,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      memoText,
+                      style: AppTypography.bodyMedium.copyWith(height: 1.5),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        )),
+
+        // 새 메모 입력창
         Container(
           decoration: BoxDecoration(
             color: AppColors.surface,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppColors.border),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(5),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
               TextField(
                 controller: memoController,
-                maxLines: 4,
+                maxLines: 3,
                 decoration: InputDecoration(
-                  hintText: '이 기록에 대한 메모를 남겨보세요...',
+                  hintText: '메모를 추가로 남겨보세요...',
                   hintStyle: AppTypography.bodyMedium.copyWith(
                     color: AppColors.textTertiary,
+                    fontSize: 14,
                   ),
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.zero,
                 ),
-                style: AppTypography.bodyLarge,
+                style: AppTypography.bodyLarge.copyWith(height: 1.6),
               ),
               const SizedBox(height: 12),
               Obx(
                 () => SizedBox(
                   width: double.infinity,
                   child: AppButton(
-                    label: controller.isSaving.value ? '저장 중...' : '메모 저장',
-                    variant: AppButtonVariant.secondary,
-                    size: AppButtonSize.small,
+                    label: controller.isSaving.value ? '저장 중...' : '새 메모 등록하기',
+                    variant: AppButtonVariant.primary,
+                    size: AppButtonSize.medium,
                     onPressed: controller.isSaving.value
                         ? null
-                        : () => controller.saveMemo(memoController.text),
+                        : () async {
+                            final text = memoController.text;
+                            if (text.trim().isNotEmpty) {
+                              await controller.addMemo(text);
+                              memoController.clear();
+                            }
+                          },
                   ),
                 ),
               ),

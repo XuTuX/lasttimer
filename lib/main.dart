@@ -5,6 +5,7 @@ import 'package:last_timer/layouts/adaptive_scaffold.dart';
 import 'package:last_timer/layouts/ipad/ipad_main_layout.dart';
 import 'package:last_timer/layouts/ipad/ipad_timer_layout.dart';
 import 'package:last_timer/pages/record_detail/record_detail_page.dart';
+import 'package:last_timer/pages/subject_detail/memos_page.dart';
 import 'package:last_timer/pages/subject_detail/subject_detail_page.dart';
 import 'package:last_timer/pages/subjects/subject_controller.dart';
 import 'package:last_timer/pages/subjects/subject_list_page.dart';
@@ -61,6 +62,8 @@ class MyApp extends StatelessWidget {
           name: Routes.recordDetail,
           page: () => const RecordDetailPage(),
         ),
+        // Memos
+        GetPage(name: Routes.memos, page: () => const MemosPage()),
       ],
     );
   }

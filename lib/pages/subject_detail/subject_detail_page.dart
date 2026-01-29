@@ -37,6 +37,22 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
         title: Obx(() => Text(controller.subject.value?.subjectName ?? '분석')),
         actions: [
           IconButton(
+            icon: const Icon(Icons.sticky_note_2_outlined),
+            onPressed: () {
+              final subject = controller.subject.value;
+              if (subject != null) {
+                Get.toNamed(
+                  Routes.memos,
+                  arguments: {
+                    'subjectId': subject.id,
+                    'subjectName': subject.subjectName,
+                  },
+                );
+              }
+            },
+            tooltip: '메모 모아보기',
+          ),
+          IconButton(
             icon: const Icon(Icons.more_vert_rounded),
             onPressed: () {
               final subject = controller.subject.value;
@@ -96,6 +112,7 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
                   onTap: () => _goToRecordDetail(exam),
                   onDelete: () => controller.deleteExam(exam.id),
                   showSwipeHint: index == 0, // 첫 번째 카드에만 힌트 표시
+                  hasMemo: exam.memos.isNotEmpty,
                 ),
               );
             }),
@@ -148,6 +165,20 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
           onTap: () {
             Get.back();
             _confirmDelete(context, subject.id);
+          },
+        ),
+        AppBottomSheetOption(
+          icon: Icons.sticky_note_2_outlined,
+          label: '메모 모아보기',
+          onTap: () {
+            Get.back();
+            Get.toNamed(
+              Routes.memos,
+              arguments: {
+                'subjectId': subject.id,
+                'subjectName': subject.subjectName,
+              },
+            );
           },
         ),
       ],
