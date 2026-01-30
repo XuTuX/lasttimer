@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.neoreo" "\0"
-            VALUE "FileDescription", "last_timer" "\0"
+            VALUE "FileDescription", "Momentum" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "last_timer" "\0"
+            VALUE "InternalName", "Momentum" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.neoreo. All rights reserved." "\0"
-            VALUE "OriginalFilename", "last_timer.exe" "\0"
-            VALUE "ProductName", "last_timer" "\0"
+            VALUE "OriginalFilename", "Momentum.exe" "\0"
+            VALUE "ProductName", "Momentum" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

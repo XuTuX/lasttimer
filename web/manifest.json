@@ -1,6 +1,6 @@
 {
-    "name": "last_timer",
-    "short_name": "last_timer",
+    "name": "Momentum",
+    "short_name": "Momentum",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#hexcode",
