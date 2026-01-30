@@ -48,7 +48,6 @@ class RecordDetailController extends GetxController {
       Future.delayed(const Duration(seconds: 2), () {
         saveSuccess.value = false;
       });
-    } catch (e) {
     } finally {
       isSaving.value = false;
     }
@@ -59,13 +58,11 @@ class RecordDetailController extends GetxController {
     final currentExam = exam.value;
     if (currentExam == null) return;
 
-    try {
-      currentExam.memos.removeAt(index);
-      await _isarService.isar.writeTxn(() async {
-        await _isarService.isar.examDbs.put(currentExam);
-      });
-      memos.value = List<String>.from(currentExam.memos);
-    } catch (e) {}
+    currentExam.memos.removeAt(index);
+    await _isarService.isar.writeTxn(() async {
+      await _isarService.isar.examDbs.put(currentExam);
+    });
+    memos.value = List<String>.from(currentExam.memos);
   }
 
   /// 기록 이름 변경
@@ -73,14 +70,12 @@ class RecordDetailController extends GetxController {
     final currentExam = exam.value;
     if (currentExam == null) return;
 
-    try {
-      currentExam.title = newTitle.trim();
-      await _isarService.isar.writeTxn(() async {
-        await _isarService.isar.examDbs.put(currentExam);
-      });
-      exam.value = currentExam;
-      exam.refresh(); // UI 갱신 강제
-    } catch (e) {}
+    currentExam.title = newTitle.trim();
+    await _isarService.isar.writeTxn(() async {
+      await _isarService.isar.examDbs.put(currentExam);
+    });
+    exam.value = currentExam;
+    exam.refresh(); // UI 갱신 강제
   }
 
   /// 기록 삭제

@@ -23,9 +23,7 @@ subprojects {
     if (project.name == "isar_flutter_libs") {
         val applyNamespace = {
             val android = project.extensions.findByName("android") as? com.android.build.gradle.BaseExtension
-            if (android?.namespace == null) {
-                android?.namespace = "dev.isar.isar_flutter_libs"
-            }
+            android?.namespace = "dev.isar.isar_flutter_libs"
         }
         if (project.state.executed) {
             applyNamespace()
