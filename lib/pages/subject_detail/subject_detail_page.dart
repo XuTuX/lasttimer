@@ -417,6 +417,10 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
               child: LineChart(
                 LineChartData(
                   minY: 0,
+                  minX: 0,
+                  maxX: (exams.length - 1).toDouble() > 0
+                      ? (exams.length - 1).toDouble()
+                      : 1,
                   gridData: FlGridData(
                     show: true,
                     drawVerticalLine: false,
@@ -433,6 +437,7 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
+                        interval: 1,
                         getTitlesWidget: (value, meta) {
                           final idx = value.toInt();
                           if (idx >= 0 && idx < exams.length) {
