@@ -492,9 +492,9 @@ class _DashboardSection extends GetView<SubjectController> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'MOMENTUM',
-                      style: AppTypography.headlineMedium.copyWith(
+                      style: TextStyle(
                         fontWeight: FontWeight.w900,
                         letterSpacing: 2.0,
                         fontSize: 18,
@@ -514,7 +514,6 @@ class _DashboardSection extends GetView<SubjectController> {
                   ],
                 ),
               ),
-              _buildStreakBadge(),
             ],
           ),
           const SizedBox(height: 20),
@@ -523,45 +522,6 @@ class _DashboardSection extends GetView<SubjectController> {
         ],
       ),
     );
-  }
-
-  Widget _buildStreakBadge() {
-    return Obx(() {
-      final streak = controller.currentStreak.value;
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: AppColors.primary,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withAlpha(40),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.local_fire_department_rounded,
-              color: Colors.orangeAccent,
-              size: 18,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              '$streak일째',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: 13,
-              ),
-            ),
-          ],
-        ),
-      );
-    });
   }
 }
 
