@@ -102,11 +102,8 @@ class SubjectDetailController extends GetxController {
     final questionSecondsList = data.map((e) => e.questionSeconds).toList();
     final aggregated = StatsUtils.aggregateQuestionTimes(questionSecondsList);
 
-    // [개선] 전체 시험 시간 / 문항 수를 기준으로 임계값을 설정하여
-    // 그보다 적게 걸린 문항은 '느린 문항'에서 제외
-    final double threshold =
-        (subject.value?.mockTimeSeconds ?? 0) /
-        (subject.value?.mockQuestionCount ?? 1);
+    // [디자인 판단을 위해 임시로 threshold를 0으로 설정하여 모든 문항이 표시되게 함]
+    const double threshold = 0.0;
 
     // 상위 10% 오래 걸린 문항
     topSlowQuestions.value = StatsUtils.getTopSlowQuestions(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:last_timer/components/components.dart';
@@ -42,6 +43,12 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
       appBar: AppBar(
         title: const Text('히스토리 상세'),
         actions: [
+          if (kDebugMode)
+            IconButton(
+              icon: const Icon(Icons.bug_report_outlined, color: Colors.orange),
+              onPressed: () => _injectMockData(),
+              tooltip: '디버그: 모의 데이터 주입',
+            ),
           IconButton(
             icon: const Icon(Icons.more_vert_rounded),
             onPressed: _showMoreOptions,
@@ -149,6 +156,11 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
     int verySlowCount = 0;
     int unsolvedCount = 0;
 
+    // [개선] 목표 페이스 임계값 계산
+    final targetThreshold =
+        (controller.subject.value?.mockTimeSeconds ?? 0) /
+        (controller.subject.value?.mockQuestionCount ?? 1);
+
     for (final sec in exam.questionSeconds) {
       if (sec == 0) {
         unsolvedCount++;
@@ -158,10 +170,15 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
           veryFastCount++;
         } else if (zScore < -0.6) {
           fastCount++;
-        } else if (zScore > 1.2) {
-          verySlowCount++;
         } else if (zScore > 0.6) {
-          slowCount++;
+          // Z-Score상 느리더라도 목표 페이스(threshold)보다 빠르면 '느림' 태그 제외
+          if (sec < targetThreshold) continue;
+
+          if (zScore > 1.2) {
+            verySlowCount++;
+          } else {
+            slowCount++;
+          }
         }
       }
     }
@@ -232,6 +249,10 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
 
               if (!isUnsolved) {
                 final zScore = stdDev > 0 ? (sec - mean) / stdDev : 0.0;
+                final targetThreshold =
+                    (controller.subject.value?.mockTimeSeconds ?? 0) /
+                    (controller.subject.value?.mockQuestionCount ?? 1);
+
                 if (zScore < -1.2) {
                   tag = '매우 빠름';
                   tagColor = AppColors.success;
@@ -240,14 +261,17 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
                   tag = '빠름';
                   tagColor = AppColors.success.withAlpha(180);
                   itemBg = AppColors.success.withAlpha(10);
-                } else if (zScore > 1.2) {
-                  tag = '매우 느림';
-                  tagColor = AppColors.error;
-                  itemBg = AppColors.error.withAlpha(15);
-                } else if (zScore > 0.6) {
-                  tag = '느림';
-                  tagColor = AppColors.warning;
-                  itemBg = AppColors.warning.withAlpha(15);
+                } else if (zScore > 0.6 && sec >= targetThreshold) {
+                  // 목표 페이스보다 느릴 때만 '느림/매우 느림' 표시
+                  if (zScore > 1.2) {
+                    tag = '매우 느림';
+                    tagColor = AppColors.error;
+                    itemBg = AppColors.error.withAlpha(15);
+                  } else {
+                    tag = '느림';
+                    tagColor = AppColors.warning;
+                    itemBg = AppColors.warning.withAlpha(15);
+                  }
                 }
               }
 
@@ -348,66 +372,70 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('메모', style: AppTypography.headlineSmall),
-              Obx(() => Text(
-                '총 ${controller.memos.length}개',
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.textTertiary,
-                  fontSize: 11,
+              Obx(
+                () => Text(
+                  '총 ${controller.memos.length}개',
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.textTertiary,
+                    fontSize: 11,
+                  ),
                 ),
-              )),
+              ),
             ],
           ),
         ),
-        
+
         // 기존 메모 리스트
-        Obx(() => Column(
-          children: controller.memos.asMap().entries.map((entry) {
-            final index = entry.key;
-            final memoText = entry.value;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.gray50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.gray100),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '메모 #${index + 1}',
-                          style: AppTypography.caption.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textTertiary,
+        Obx(
+          () => Column(
+            children: controller.memos.asMap().entries.map((entry) {
+              final index = entry.key;
+              final memoText = entry.value;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.gray50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.gray100),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '메모 #${index + 1}',
+                            style: AppTypography.caption.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textTertiary,
+                            ),
                           ),
-                        ),
-                        GestureDetector(
-                          onTap: () => controller.deleteMemo(index),
-                          child: Icon(
-                            Icons.close_rounded,
-                            size: 14,
-                            color: AppColors.gray400,
+                          GestureDetector(
+                            onTap: () => controller.deleteMemo(index),
+                            child: Icon(
+                              Icons.close_rounded,
+                              size: 14,
+                              color: AppColors.gray400,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      memoText,
-                      style: AppTypography.bodyMedium.copyWith(height: 1.5),
-                    ),
-                  ],
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        memoText,
+                        style: AppTypography.bodyMedium.copyWith(height: 1.5),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            );
-          }).toList(),
-        )),
+              );
+            }).toList(),
+          ),
+        ),
 
         // 새 메모 입력창
         Container(
@@ -516,5 +544,26 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
     if (confirmed) {
       controller.deleteExam();
     }
+  }
+
+  /// [디버그 전용] UI 확인을 위한 데이터 주입
+  void _injectMockData() {
+    final exam = controller.exam.value;
+    if (exam == null) return;
+
+    // 현재 문항들을 기반으로 무작위 시간 설정
+    final List<int> mockSeconds = List.generate(exam.questionSeconds.length, (
+      i,
+    ) {
+      if (i % 7 == 0) return 0; // 미풀이
+      if (i % 5 == 0) return 300; // 매우 느림 (5분)
+      if (i % 3 == 0) return 10; // 빠름
+      return 60; // 보통
+    });
+
+    exam.questionSeconds = mockSeconds;
+    exam.totalSeconds = mockSeconds.fold(0, (a, b) => a + b);
+    controller.exam.value = exam;
+    controller.exam.refresh();
   }
 }

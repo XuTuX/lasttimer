@@ -20,6 +20,7 @@ class SubjectDetailPage extends StatefulWidget {
 
 class _SubjectDetailPageState extends State<SubjectDetailPage> {
   late SubjectDetailController controller;
+  bool _isWeakQuestionsExpanded = false;
 
   @override
   void initState() {
@@ -237,13 +238,6 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 12),
-          child: Text(
-            '상세 분석',
-            style: AppTypography.headlineMedium.copyWith(fontSize: 20),
-          ),
-        ),
         Obx(
           () => controller.isMock
               ? _buildMockDashboard()
@@ -262,20 +256,8 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.only(left: 4, bottom: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('풀이 페이스 점검', style: AppTypography.headlineSmall),
-                  const SizedBox(height: 4),
-                  Text(
-                    '평균보다 긴 시간이 소요된 문항들입니다.',
-                    style: AppTypography.bodySmall.copyWith(
-                      color: AppColors.textTertiary,
-                    ),
-                  ),
-                ],
-              ),
+              padding: const EdgeInsets.only(left: 4, bottom: 12),
+              child: Text('주요 취약 문항', style: AppTypography.headlineSmall),
             ),
             _buildWeakQuestionsGrid(),
             const SizedBox(height: 24),
@@ -289,79 +271,265 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
   Widget _buildWeakQuestionsGrid() {
     return Obx(() {
       final items = controller.topSlowQuestions;
+
       return SizedBox(
-        height: 110,
+        height: 48,
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 4),
           itemCount: items.length,
           itemBuilder: (context, index) {
             final entry = items[index];
-            final isSlowest = index == 0;
+            final isFirst = index == 0;
 
-            return Container(
-              width: 120,
-              margin: const EdgeInsets.only(right: 12),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isSlowest
-                      ? AppColors.error.withAlpha(50)
-                      : AppColors.border,
-                  width: isSlowest ? 1.5 : 1,
+            return GestureDetector(
+              onTap: () => _showQuestionAnalysis(entry.key),
+              child: Container(
+                margin: EdgeInsets.only(left: index == 0 ? 4 : 0, right: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
                 ),
-                boxShadow: isSlowest
-                    ? [
-                        BoxShadow(
-                          color: AppColors.error.withAlpha(10),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ]
-                    : null,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '${entry.key}번',
-                        style: AppTypography.labelLarge.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: isSlowest
-                              ? AppColors.error
-                              : AppColors.textPrimary,
-                        ),
-                      ),
-                      if (isSlowest)
-                        Icon(
-                          Icons.priority_high_rounded,
-                          size: 14,
-                          color: AppColors.error,
-                        ),
-                    ],
+                decoration: BoxDecoration(
+                  color: isFirst ? AppColors.error : AppColors.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isFirst
+                        ? AppColors.error
+                        : AppColors.error.withAlpha(40),
+                    width: 1,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    formatSeconds(entry.value.toInt()),
-                    style: AppTypography.headlineMedium.copyWith(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.5,
+                  boxShadow: [
+                    BoxShadow(
+                      color: (isFirst ? AppColors.error : Colors.black)
+                          .withAlpha(15),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
                     ),
-                  ),
-                ],
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isFirst
+                          ? Icons.priority_high_rounded
+                          : Icons.timer_outlined,
+                      size: 14,
+                      color: isFirst ? Colors.white : AppColors.error,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${entry.key}번',
+                      style: AppTypography.labelMedium.copyWith(
+                        color: isFirst ? Colors.white : AppColors.textPrimary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      width: 1,
+                      height: 12,
+                      color: (isFirst ? Colors.white : AppColors.error)
+                          .withAlpha(60),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      formatSeconds(entry.value.toInt()),
+                      style: AppTypography.caption.copyWith(
+                        color: isFirst
+                            ? Colors.white.withAlpha(220)
+                            : AppColors.error,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           },
         ),
       );
     });
+  }
+
+  void _showQuestionAnalysis(int questionNum) {
+    // 회차별 데이터 추출
+    final exams = controller.exams.reversed.toList();
+    final List<FlSpot> questionSpots = [];
+    final List<FlSpot> avgSpots = [];
+
+    for (int i = 0; i < exams.length; i++) {
+      final exam = exams[i];
+      // 문제 인덱스는 0-based
+      if (exam.questionSeconds.length >= questionNum) {
+        final sec = exam.questionSeconds[questionNum - 1];
+        if (sec > 0) {
+          questionSpots.add(FlSpot(i.toDouble(), sec.toDouble()));
+
+          // 해당 회차의 전체 문항 평균 (해당 문항 제외한 나머지 평균이 더 정확하지만, 여기서는 전체 평균으로 대체)
+          final totalAvg = exam.totalSeconds / exam.questionCount;
+          avgSpots.add(FlSpot(i.toDouble(), totalAvg));
+        }
+      }
+    }
+
+    if (questionSpots.isEmpty) return;
+
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '$questionNum번 문항 상세 분석',
+                      style: AppTypography.headlineSmall,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '전체 회차별 소요 시간 추이',
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                  ],
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: () => Get.back(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              height: 200,
+              child: LineChart(
+                LineChartData(
+                  minY: 0,
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: false,
+                    getDrawingHorizontalLine: (value) =>
+                        FlLine(color: AppColors.divider, strokeWidth: 1),
+                  ),
+                  titlesData: FlTitlesData(
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          final idx = value.toInt();
+                          if (idx >= 0 && idx < exams.length) {
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Text(
+                                '${idx + 1}회',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: AppColors.textTertiary,
+                                ),
+                              ),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      ),
+                    ),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 40,
+                        getTitlesWidget: (value, meta) {
+                          return Text(
+                            formatSeconds(value.toInt()),
+                            style: const TextStyle(
+                              fontSize: 9,
+                              color: AppColors.textTertiary,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  borderData: FlBorderData(show: false),
+                  lineBarsData: [
+                    // 이 문항 시간
+                    LineChartBarData(
+                      spots: questionSpots,
+                      isCurved: true,
+                      color: AppColors.error,
+                      barWidth: 4,
+                      isStrokeCapRound: true,
+                      dotData: const FlDotData(show: true),
+                      belowBarData: BarAreaData(
+                        show: true,
+                        color: AppColors.error.withAlpha(20),
+                      ),
+                    ),
+                    // 전체 평균 시간 (점선)
+                    LineChartBarData(
+                      spots: avgSpots,
+                      isCurved: true,
+                      color: AppColors.accent,
+                      barWidth: 2,
+                      dashArray: [5, 5],
+                      dotData: const FlDotData(show: false),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildLegendItem(AppColors.error, '이 문항'),
+                const SizedBox(width: 24),
+                _buildLegendItem(AppColors.accent, '회차별 평균', isDash: true),
+              ],
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLegendItem(Color color, String label, {bool isDash = false}) {
+    return Row(
+      children: [
+        Container(
+          width: 12,
+          height: 3,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
+        ),
+      ],
+    );
   }
 
   Widget _buildMockDashboard() {

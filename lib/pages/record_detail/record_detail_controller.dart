@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:last_timer/database/exam_db.dart';
 import 'package:last_timer/database/isar_service.dart';
+import 'package:last_timer/database/subject_db.dart';
 
 class RecordDetailController extends GetxController {
   final IsarService _isarService = Get.find<IsarService>();
@@ -9,6 +10,7 @@ class RecordDetailController extends GetxController {
   RecordDetailController(this.examId);
 
   final exam = Rxn<ExamDb>();
+  final subject = Rxn<SubjectDb>();
   final memos = <String>[].obs;
   final isSaving = false.obs;
   final saveSuccess = false.obs;
@@ -24,6 +26,8 @@ class RecordDetailController extends GetxController {
     if (loaded != null) {
       exam.value = loaded;
       memos.value = List<String>.from(loaded.memos);
+      // 과목 정보도 함께 로드
+      subject.value = await _isarService.isar.subjectDbs.get(loaded.subjectId);
     }
   }
 
