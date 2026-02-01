@@ -4,4 +4,5 @@ abstract class Routes {
   static const timer = '/timer';
   static const recordDetail = '/recordDetail';
   static const memos = '/memos';
+  static const studyReport = '/studyReport';
 }

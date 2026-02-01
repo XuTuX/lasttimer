@@ -10,6 +10,7 @@ import 'package:last_timer/pages/subject_detail/subject_detail_page.dart';
 import 'package:last_timer/pages/subjects/subject_controller.dart';
 import 'package:last_timer/pages/subjects/subject_list_page.dart';
 import 'package:last_timer/pages/timer/timer_page.dart';
+import 'package:last_timer/pages/statistics/study_report_page.dart';
 import 'package:last_timer/routes/app_routes.dart';
 import 'package:last_timer/utils/app_theme.dart';
 
@@ -64,6 +65,8 @@ class MyApp extends StatelessWidget {
         ),
         // Memos
         GetPage(name: Routes.memos, page: () => const MemosPage()),
+        // Study Report
+        GetPage(name: Routes.studyReport, page: () => const StudyReportPage()),
       ],
     );
   }

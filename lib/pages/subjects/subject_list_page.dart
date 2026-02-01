@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:last_timer/components/components.dart';
 import 'package:last_timer/database/subject_db.dart';
 import 'package:last_timer/pages/subjects/subject_controller.dart';
@@ -22,7 +21,7 @@ class SubjectListPage extends GetView<SubjectController> {
           headerSliverBuilder: (context, innerBoxIsScrolled) {
             return [
               SliverAppBar(
-                expandedHeight: 330,
+                expandedHeight: 200,
                 floating: false,
                 pinned: true,
                 elevation: 0,
@@ -487,178 +486,52 @@ class _DashboardSection extends GetView<SubjectController> {
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'MOMENTUM',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 2.0,
-                        fontSize: 18,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'MOMENTUM',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 2.0,
+                      fontSize: 18,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Obx(
+                    () => Text(
+                      formatSeconds(controller.todayTotalSeconds.value),
+                      style: AppTypography.displayMedium.copyWith(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.5,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Obx(
-                      () => Text(
-                        formatSeconds(controller.todayTotalSeconds.value),
-                        style: AppTypography.displayMedium.copyWith(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
+                ],
+              ),
+              GestureDetector(
+                onTap: () => Get.toNamed(Routes.studyReport),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.gray50,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.bar_chart_rounded,
+                    color: AppColors.accent,
+                    size: 24,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 20),
-          SizedBox(height: 130, child: _WeeklyChart()),
-          const SizedBox(height: 30), // 탭 바와의 여유 공간
         ],
       ),
     );
-  }
-}
-
-class _WeeklyChart extends GetView<SubjectController> {
-  const _WeeklyChart();
-
-  @override
-  Widget build(BuildContext context) {
-    return Obx(() {
-      final weekSeconds = controller.weeklySeconds;
-      final maxVal = weekSeconds.fold<int>(0, (m, v) => v > m ? v : m);
-
-      return BarChart(
-        BarChartData(
-          alignment: BarChartAlignment.spaceAround,
-          maxY: maxVal == 0 ? 3600 : maxVal.toDouble() * 1.3,
-          barTouchData: BarTouchData(
-            enabled: true,
-            touchTooltipData: BarTouchTooltipData(
-              getTooltipColor: (_) => AppColors.gray900,
-              tooltipPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 8,
-              ),
-              tooltipMargin: 8,
-              getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                return BarTooltipItem(
-                  formatSeconds(rod.toY.toInt()),
-                  AppTypography.bodySmall.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                );
-              },
-            ),
-          ),
-          titlesData: FlTitlesData(
-            show: true,
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 30,
-                getTitlesWidget: (value, meta) {
-                  final index = value.toInt();
-                  if (index < 0 || index >= 7) return const SizedBox();
-
-                  String label = '';
-                  if (index == 6) {
-                    label = '오늘';
-                  } else {
-                    final date = DateTime.now().subtract(
-                      Duration(days: 6 - index),
-                    );
-                    label = '${date.month}/${date.day}';
-                  }
-
-                  return SideTitleWidget(
-                    meta: meta,
-                    child: Text(
-                      label,
-                      style: AppTypography.caption.copyWith(
-                        fontSize: 10,
-                        color: index == 6
-                            ? AppColors.accent
-                            : AppColors.textTertiary,
-                        fontWeight: index == 6
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 40,
-                interval: maxVal == 0
-                    ? 1800
-                    : (maxVal / 3).clamp(600, 7200).toDouble(),
-                getTitlesWidget: (value, meta) {
-                  if (value == 0) return const SizedBox();
-                  final minutes = value ~/ 60;
-                  return SideTitleWidget(
-                    meta: meta,
-                    child: Text(
-                      '${minutes}m',
-                      style: AppTypography.caption.copyWith(
-                        fontSize: 9,
-                        color: AppColors.textTertiary,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            topTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            rightTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-          ),
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: false,
-            horizontalInterval: maxVal == 0
-                ? 1800
-                : (maxVal / 3).clamp(600, 7200).toDouble(),
-            getDrawingHorizontalLine: (value) =>
-                FlLine(color: AppColors.gray100, strokeWidth: 1),
-          ),
-          borderData: FlBorderData(show: false),
-          barGroups: [
-            for (int i = 0; i < weekSeconds.length; i++)
-              BarChartGroupData(
-                x: i,
-                barRods: [
-                  BarChartRodData(
-                    toY: weekSeconds[i].toDouble(),
-                    color: i == 6 ? AppColors.accent : AppColors.gray200,
-                    width: 16,
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(4),
-                    ),
-                    backDrawRodData: BackgroundBarChartRodData(
-                      show: true,
-                      toY: maxVal == 0 ? 3600 : maxVal.toDouble() * 1.3,
-                      color: AppColors.gray50,
-                    ),
-                  ),
-                ],
-              ),
-          ],
-        ),
-      );
-    });
   }
 }

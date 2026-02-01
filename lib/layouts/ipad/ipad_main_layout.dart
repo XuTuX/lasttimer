@@ -130,6 +130,12 @@ class _IPadMainLayoutState extends State<IPadMainLayout>
                           ),
                         ),
                         const Spacer(),
+                        // Stats button
+                        IconButton(
+                          icon: const Icon(Icons.bar_chart_rounded),
+                          color: AppColors.textSecondary,
+                          onPressed: () => Get.toNamed(Routes.studyReport),
+                        ),
                         // Add button
                         IconButton(
                           icon: const Icon(Icons.add_rounded),
