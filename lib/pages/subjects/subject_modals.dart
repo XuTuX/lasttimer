@@ -40,84 +40,97 @@ class _AddSubjectSheetState extends State<AddSubjectSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+    return Padding(
       padding: EdgeInsets.only(
-        left: 24,
-        right: 24,
-        top: 24,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 32,
+        bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Center(child: HandleBar()),
-            const SizedBox(height: 24),
-            Text('새 과목 추가', style: AppTypography.headlineLarge),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                _buildTypeTab('모의고사', SubjectType.mock),
-                const SizedBox(width: 12),
-                _buildTypeTab('자율 학습', SubjectType.practice),
-              ],
-            ),
-            const SizedBox(height: 32),
-            Text('과목 이름', style: AppTypography.labelMedium),
-            const SizedBox(height: 12),
-            TextField(
-              controller: nameController,
-              autofocus: true,
-              style: AppTypography.bodyLarge,
-              decoration: const InputDecoration(hintText: '예: 수능 수학, 영어 회화'),
-            ),
-            const SizedBox(height: 24),
-            if (selectedType == SubjectType.mock) ...[
+      child: Container(
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Center(child: HandleBar()),
+              const SizedBox(height: 16),
+              Text('과목 추가', style: AppTypography.headlineLarge),
+              const SizedBox(height: 16),
               Row(
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('시험 시간 (분)', style: AppTypography.labelMedium),
-                        const SizedBox(height: 8),
-                        TextField(
-                          controller: timeController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(hintText: '80'),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('문항 수', style: AppTypography.labelMedium),
-                        const SizedBox(height: 8),
-                        TextField(
-                          controller: questionController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(hintText: '45'),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _buildTypeTab('모의고사', SubjectType.mock),
+                  const SizedBox(width: 8),
+                  _buildTypeTab('자율 학습', SubjectType.practice),
                 ],
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 20),
+              Text('과목 이름', style: AppTypography.labelMedium),
+              const SizedBox(height: 8),
+              TextField(
+                controller: nameController,
+                autofocus: true,
+                style: AppTypography.bodyLarge,
+                decoration: const InputDecoration(
+                  hintText: '예: 수능 수학, 영어 회화',
+                  contentPadding: EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+              const SizedBox(height: 20),
+              if (selectedType == SubjectType.mock) ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('시험 시간 (분)', style: AppTypography.labelMedium),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: timeController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              hintText: '80',
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: 10,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('문항 수', style: AppTypography.labelMedium),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: questionController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              hintText: '45',
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: 10,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+              ],
+              SizedBox(
+                width: double.infinity,
+                child: AppButton(label: '과목 생성하기', onPressed: _submit),
+              ),
             ],
-            SizedBox(
-              width: double.infinity,
-              child: AppButton(label: '과목 생성하기', onPressed: _submit),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -206,76 +219,82 @@ class _MockSettingsSheetState extends State<MockSettingsSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+    return Padding(
       padding: EdgeInsets.only(
-        left: 24,
-        right: 24,
-        top: 24,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 32,
+        bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Center(child: HandleBar()),
-          const SizedBox(height: 24),
-          Text('시험 설정 변경', style: AppTypography.headlineLarge),
-          Text(widget.subject.subjectName, style: AppTypography.bodySmall),
-          const SizedBox(height: 32),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('시험 시간 (분)', style: AppTypography.labelMedium),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: timeController,
-                      keyboardType: TextInputType.number,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('문항 수', style: AppTypography.labelMedium),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: questionController,
-                      keyboardType: TextInputType.number,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            child: AppButton(
-              label: '설정 저장하기',
-              onPressed: () {
-                final time = int.tryParse(timeController.text) ?? 80;
-                final count = int.tryParse(questionController.text) ?? 45;
-                Navigator.pop(
-                  context,
-                  MockSettingsResult(
-                    timeSeconds: time * 60,
-                    questionCount: count,
+      child: Container(
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Center(child: HandleBar()),
+            const SizedBox(height: 16),
+            Text('시험 설정 변경', style: AppTypography.headlineLarge),
+            Text(widget.subject.subjectName, style: AppTypography.bodySmall),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('시험 시간 (분)', style: AppTypography.labelMedium),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: timeController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          contentPadding: EdgeInsets.symmetric(vertical: 10),
+                        ),
+                      ),
+                    ],
                   ),
-                );
-              },
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('문항 수', style: AppTypography.labelMedium),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: questionController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          contentPadding: EdgeInsets.symmetric(vertical: 10),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: AppButton(
+                label: '설정 저장하기',
+                onPressed: () {
+                  final time = int.tryParse(timeController.text) ?? 80;
+                  final count = int.tryParse(questionController.text) ?? 45;
+                  Navigator.pop(
+                    context,
+                    MockSettingsResult(
+                      timeSeconds: time * 60,
+                      questionCount: count,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

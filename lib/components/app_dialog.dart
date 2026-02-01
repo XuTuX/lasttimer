@@ -168,6 +168,7 @@ class AppInputDialog extends StatelessWidget {
                 prefixIcon: prefixIcon != null
                     ? Icon(prefixIcon, size: 18)
                     : null,
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
               ),
               onSubmitted: (value) {
                 if (value.isNotEmpty) onConfirm?.call(value);
