@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
@@ -11,11 +13,37 @@ class IsarService extends GetxService {
   static const String _sampleCreatedKey = 'sample_subjects_created';
 
   Future<IsarService> init() async {
-    final dir = await getApplicationDocumentsDirectory();
+    final supportDir = await getApplicationSupportDirectory();
+    final documentsDir = await getApplicationDocumentsDirectory();
+
+    // iCloud 동기화로 인한 잠금 문제를 방지하기 위해 Application Support 디렉토리로 이동
+    // 기존 데이터가 Documents에 있다면 마이그레이션 수행
+    final oldDbFile = File('${documentsDir.path}/default.isar');
+    if (await oldDbFile.exists()) {
+      try {
+        final files = documentsDir.listSync();
+        for (var entity in files) {
+          if (entity is File) {
+            final file = entity;
+            final name = file.path.split(Platform.pathSeparator).last;
+            if (name.startsWith('default.isar')) {
+              final newPath = '${supportDir.path}/$name';
+              if (!await File(newPath).exists()) {
+                await file.copy(newPath);
+                await file.delete();
+              }
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('Migration error: $e');
+      }
+    }
+
     isar = await Isar.open([
       SubjectDbSchema,
       ExamDbSchema,
-    ], directory: dir.path);
+    ], directory: supportDir.path);
 
     // 샘플 과목 생성 (최초 1회)
     await _createSampleSubjectsIfNeeded();

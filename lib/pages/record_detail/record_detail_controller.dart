@@ -35,7 +35,8 @@ class RecordDetailController extends GetxController {
     isSaving.value = true;
     try {
       final newMemo = text.trim();
-      currentExam.memos.add(newMemo);
+      // Isar 3.x에서 List 업데이트 시 새 리스트를 할당하는 것이 변경 감지에 더 확실합니다.
+      currentExam.memos = [...currentExam.memos, newMemo];
 
       await _isarService.isar.writeTxn(() async {
         await _isarService.isar.examDbs.put(currentExam);
