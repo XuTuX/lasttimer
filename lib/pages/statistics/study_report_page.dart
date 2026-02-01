@@ -4,8 +4,73 @@ import 'package:get/get.dart';
 import 'package:last_timer/pages/subjects/subject_controller.dart';
 import 'package:last_timer/utils/design_tokens.dart';
 
-class StudyReportPage extends GetView<SubjectController> {
+class StudyReportPage extends StatefulWidget {
   const StudyReportPage({super.key});
+
+  @override
+  State<StudyReportPage> createState() => _StudyReportPageState();
+}
+
+class _StudyReportPageState extends State<StudyReportPage> {
+  final SubjectController controller = Get.find<SubjectController>();
+  late DateTime _currentMonth;
+  late DateTime _earliestMonth;
+  late DateTime _latestMonth;
+
+  @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    _currentMonth = DateTime(now.year, now.month, 1);
+    _latestMonth = _currentMonth;
+    _calculateEarliestMonth();
+  }
+
+  void _calculateEarliestMonth() {
+    if (controller.exams.isEmpty) {
+      _earliestMonth = _currentMonth;
+      return;
+    }
+
+    // 가장 오래된 시험 기록의 월 찾기
+    DateTime earliest = controller.exams.first.finishedAt;
+    for (final exam in controller.exams) {
+      if (exam.finishedAt.isBefore(earliest)) {
+        earliest = exam.finishedAt;
+      }
+    }
+    _earliestMonth = DateTime(earliest.year, earliest.month, 1);
+  }
+
+  void _goToPreviousMonth() {
+    final prevMonth = DateTime(_currentMonth.year, _currentMonth.month - 1, 1);
+    if (!prevMonth.isBefore(_earliestMonth)) {
+      HapticFeedback.selectionClick();
+      setState(() {
+        _currentMonth = prevMonth;
+      });
+    }
+  }
+
+  void _goToNextMonth() {
+    final nextMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 1);
+    if (!nextMonth.isAfter(_latestMonth)) {
+      HapticFeedback.selectionClick();
+      setState(() {
+        _currentMonth = nextMonth;
+      });
+    }
+  }
+
+  bool get _canGoPrevious {
+    final prevMonth = DateTime(_currentMonth.year, _currentMonth.month - 1, 1);
+    return !prevMonth.isBefore(_earliestMonth);
+  }
+
+  bool get _canGoNext {
+    final nextMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 1);
+    return !nextMonth.isAfter(_latestMonth);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -16,6 +81,12 @@ class StudyReportPage extends GetView<SubjectController> {
         centerTitle: true,
         elevation: 0,
         backgroundColor: AppColors.background,
+        automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: const Icon(Icons.close_rounded),
+          color: AppColors.textPrimary,
+          onPressed: () => Get.back(),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.ios_share_rounded),
@@ -24,53 +95,38 @@ class StudyReportPage extends GetView<SubjectController> {
           ),
         ],
       ),
-      body: _MonthlyCalendarView(),
+      body: Obx(() {
+        // exams가 변경되면 earliestMonth 다시 계산
+        _calculateEarliestMonth();
+        final dailyStats = _calculateDailyStats(_currentMonth);
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 월 네비게이션 헤더
+              _MonthNavigator(
+                month: _currentMonth,
+                canGoPrevious: _canGoPrevious,
+                canGoNext: _canGoNext,
+                onPrevious: _goToPreviousMonth,
+                onNext: _goToNextMonth,
+              ),
+              const SizedBox(height: 20),
+              // 요일 헤더
+              _WeekdayHeader(),
+              const SizedBox(height: 8),
+              // 캘린더 그리드
+              _CalendarGrid(month: _currentMonth, dailyStats: dailyStats),
+              const SizedBox(height: 24),
+              // 이번 달 요약
+              _MonthlySummary(dailyStats: dailyStats),
+            ],
+          ),
+        );
+      }),
     );
-  }
-
-  void _showShareSheet(BuildContext context) {
-    HapticFeedback.mediumImpact();
-    Get.snackbar(
-      '공유 기능',
-      '곧 인스타그램 스토리 공유 기능이 추가됩니다!',
-      snackPosition: SnackPosition.BOTTOM,
-      margin: const EdgeInsets.all(16),
-      borderRadius: 12,
-      backgroundColor: AppColors.gray900,
-      colorText: Colors.white,
-    );
-  }
-}
-
-class _MonthlyCalendarView extends GetView<SubjectController> {
-  @override
-  Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final currentMonth = DateTime(now.year, now.month, 1);
-
-    return Obx(() {
-      final dailyStats = _calculateDailyStats(currentMonth);
-
-      return SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 월 헤더
-            _MonthHeader(month: currentMonth),
-            const SizedBox(height: 20),
-            // 요일 헤더
-            _WeekdayHeader(),
-            const SizedBox(height: 8),
-            // 캘린더 그리드
-            _CalendarGrid(month: currentMonth, dailyStats: dailyStats),
-            const SizedBox(height: 24),
-            // 이번 달 요약
-            _MonthlySummary(dailyStats: dailyStats),
-          ],
-        ),
-      );
-    });
   }
 
   Map<int, _DayStats> _calculateDailyStats(DateTime month) {
@@ -106,6 +162,19 @@ class _MonthlyCalendarView extends GetView<SubjectController> {
 
     return stats;
   }
+
+  void _showShareSheet(BuildContext context) {
+    HapticFeedback.mediumImpact();
+    Get.snackbar(
+      '공유 기능',
+      '곧 인스타그램 스토리 공유 기능이 추가됩니다!',
+      snackPosition: SnackPosition.BOTTOM,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 12,
+      backgroundColor: AppColors.gray900,
+      colorText: Colors.white,
+    );
+  }
 }
 
 class _DayStats {
@@ -115,10 +184,20 @@ class _DayStats {
   _DayStats({required this.seconds, required this.questions});
 }
 
-class _MonthHeader extends StatelessWidget {
+class _MonthNavigator extends StatelessWidget {
   final DateTime month;
+  final bool canGoPrevious;
+  final bool canGoNext;
+  final VoidCallback onPrevious;
+  final VoidCallback onNext;
 
-  const _MonthHeader({required this.month});
+  const _MonthNavigator({
+    required this.month,
+    required this.canGoPrevious,
+    required this.canGoNext,
+    required this.onPrevious,
+    required this.onNext,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -137,9 +216,41 @@ class _MonthHeader extends StatelessWidget {
       '12월',
     ];
 
-    return Text(
-      '${month.year}년 ${monthNames[month.month - 1]}',
-      style: AppTypography.headlineLarge.copyWith(fontWeight: FontWeight.bold),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        // 이전 달 버튼
+        GestureDetector(
+          onTap: canGoPrevious ? onPrevious : null,
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            child: Icon(
+              Icons.chevron_left_rounded,
+              color: canGoPrevious ? AppColors.textPrimary : AppColors.gray200,
+              size: 28,
+            ),
+          ),
+        ),
+        // 현재 월
+        Text(
+          '${month.year}년 ${monthNames[month.month - 1]}',
+          style: AppTypography.headlineLarge.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        // 다음 달 버튼
+        GestureDetector(
+          onTap: canGoNext ? onNext : null,
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            child: Icon(
+              Icons.chevron_right_rounded,
+              color: canGoNext ? AppColors.textPrimary : AppColors.gray200,
+              size: 28,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
