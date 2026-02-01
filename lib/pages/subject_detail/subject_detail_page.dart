@@ -20,7 +20,6 @@ class SubjectDetailPage extends StatefulWidget {
 
 class _SubjectDetailPageState extends State<SubjectDetailPage> {
   late SubjectDetailController controller;
-  bool _isWeakQuestionsExpanded = false;
 
   @override
   void initState() {

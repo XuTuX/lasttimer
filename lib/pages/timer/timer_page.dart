@@ -122,14 +122,7 @@ class _TimerPageState extends State<TimerPage> with TickerProviderStateMixin {
   Future<void> _handleBackPress() async {
     if (controller.timerElapsedSeconds.value > 0 &&
         !controller.isTimerFinished.value) {
-      final action = await _showExitOptions();
-      if (!mounted) return;
-      if (action == 'save') {
-        _showSaveSheet(context);
-      } else if (action == 'discard') {
-        controller.resetTimer();
-        Get.back();
-      }
+      _showSaveSheet(context);
     } else {
       Get.back();
     }
@@ -292,64 +285,6 @@ class _TimerPageState extends State<TimerPage> with TickerProviderStateMixin {
     );
   }
 
-  Future<String?> _showExitOptions() async {
-    return await showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Stack(
-          children: [
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 32,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.gray200,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Text('기록을 어떻게 할까요?', style: AppTypography.headlineMedium),
-                const SizedBox(height: 32),
-                SizedBox(
-                  width: double.infinity,
-                  child: AppButton(
-                    label: '기록 저장하고 종료',
-                    onPressed: () => Navigator.pop(context, 'save'),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: AppButton(
-                    label: '저장하지 않고 나가기',
-                    variant: AppButtonVariant.secondary,
-                    onPressed: () => Navigator.pop(context, 'discard'),
-                  ),
-                ),
-                const SizedBox(height: 8),
-              ],
-            ),
-            Positioned(
-              right: 0,
-              top: 0,
-              child: IconButton(
-                icon: const Icon(Icons.close_rounded, color: AppColors.gray400),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _showSaveSheet(BuildContext context) async {
     if (controller.isTimerRunning.value) controller.stopTimer();
     final titleController = TextEditingController();
@@ -428,6 +363,15 @@ class _TimerPageState extends State<TimerPage> with TickerProviderStateMixin {
                           Navigator.pop(context, titleController.text),
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: AppButton(
+                      label: '저장하지 않고 나가기',
+                      variant: AppButtonVariant.text,
+                      onPressed: () => Navigator.pop(context, '__DISCARD__'),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -435,7 +379,15 @@ class _TimerPageState extends State<TimerPage> with TickerProviderStateMixin {
         ),
       ),
     );
-    if (result != null) controller.saveExam(result);
+
+    if (result != null) {
+      if (result == '__DISCARD__') {
+        controller.resetTimer();
+        Get.back();
+      } else {
+        controller.saveExam(result);
+      }
+    }
   }
 }
 
