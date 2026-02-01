@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:last_timer/components/components.dart';
 import 'package:last_timer/database/subject_db.dart';
 import 'package:last_timer/pages/subjects/subject_controller.dart';
 import 'package:last_timer/pages/subjects/subject_modals.dart';
 import 'package:last_timer/routes/app_routes.dart';
 import 'package:last_timer/utils/design_tokens.dart';
+import 'package:last_timer/utils/seconds_format.dart';
 
 class SubjectListPage extends GetView<SubjectController> {
   const SubjectListPage({super.key});
@@ -16,29 +18,48 @@ class SubjectListPage extends GetView<SubjectController> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('MOMENTUM'),
-          bottom: TabBar(
-            tabs: const [
-              Tab(text: '모의고사'),
-              Tab(text: '자율 학습'),
-            ],
-            indicatorWeight: 2.5,
-            indicatorPadding: const EdgeInsets.symmetric(horizontal: 4),
-            indicator: UnderlineTabIndicator(
-              borderSide: const BorderSide(width: 3, color: AppColors.accent),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
+        body: NestedScrollView(
+          headerSliverBuilder: (context, innerBoxIsScrolled) {
+            return [
+              SliverAppBar(
+                expandedHeight: 330,
+                floating: false,
+                pinned: true,
+                elevation: 0,
+                backgroundColor: AppColors.background,
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Padding(
+                    padding: const EdgeInsets.only(top: 60),
+                    child: _DashboardSection(),
+                  ),
+                ),
+                bottom: TabBar(
+                  tabs: const [
+                    Tab(text: '모의고사'),
+                    Tab(text: '자율 학습'),
+                  ],
+                  indicatorWeight: 2.5,
+                  indicatorPadding: const EdgeInsets.symmetric(horizontal: 4),
+                  indicator: UnderlineTabIndicator(
+                    borderSide: const BorderSide(
+                      width: 3,
+                      color: AppColors.accent,
+                    ),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+            ];
+          },
+          body: Obx(() {
+            return TabBarView(
+              children: [
+                _buildSubjectList(controller.mockSubjects, isMock: true),
+                _buildSubjectList(controller.practiceSubjects, isMock: false),
+              ],
+            );
+          }),
         ),
-        body: Obx(() {
-          return TabBarView(
-            children: [
-              _buildSubjectList(controller.mockSubjects, isMock: true),
-              _buildSubjectList(controller.practiceSubjects, isMock: false),
-            ],
-          );
-        }),
         // [이슈 2] 하단 고정 CTA - Empty State 유무와 상관없이 고정 노출 (중복 제거)
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
         floatingActionButton: Builder(
@@ -450,5 +471,234 @@ class _AnimatedEmptyStateState extends State<_AnimatedEmptyState>
         ),
       ),
     );
+  }
+}
+
+/// 대시보드 섹션 - 오늘의 공부 시간, 스트릭, 주간 통계
+class _DashboardSection extends GetView<SubjectController> {
+  const _DashboardSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'MOMENTUM',
+                      style: AppTypography.headlineMedium.copyWith(
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 2.0,
+                        fontSize: 18,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Obx(
+                      () => Text(
+                        formatSeconds(controller.todayTotalSeconds.value),
+                        style: AppTypography.displayMedium.copyWith(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _buildStreakBadge(),
+            ],
+          ),
+          const SizedBox(height: 20),
+          SizedBox(height: 130, child: _WeeklyChart()),
+          const SizedBox(height: 30), // 탭 바와의 여유 공간
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStreakBadge() {
+    return Obx(() {
+      final streak = controller.currentStreak.value;
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.primary,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withAlpha(40),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.local_fire_department_rounded,
+              color: Colors.orangeAccent,
+              size: 18,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '$streak일째',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+}
+
+class _WeeklyChart extends GetView<SubjectController> {
+  const _WeeklyChart();
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final weekSeconds = controller.weeklySeconds;
+      final maxVal = weekSeconds.fold<int>(0, (m, v) => v > m ? v : m);
+
+      return BarChart(
+        BarChartData(
+          alignment: BarChartAlignment.spaceAround,
+          maxY: maxVal == 0 ? 3600 : maxVal.toDouble() * 1.3,
+          barTouchData: BarTouchData(
+            enabled: true,
+            touchTooltipData: BarTouchTooltipData(
+              getTooltipColor: (_) => AppColors.gray900,
+              tooltipPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 8,
+              ),
+              tooltipMargin: 8,
+              getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                return BarTooltipItem(
+                  formatSeconds(rod.toY.toInt()),
+                  AppTypography.bodySmall.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                );
+              },
+            ),
+          ),
+          titlesData: FlTitlesData(
+            show: true,
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 30,
+                getTitlesWidget: (value, meta) {
+                  final index = value.toInt();
+                  if (index < 0 || index >= 7) return const SizedBox();
+
+                  String label = '';
+                  if (index == 6) {
+                    label = '오늘';
+                  } else {
+                    final date = DateTime.now().subtract(
+                      Duration(days: 6 - index),
+                    );
+                    label = '${date.month}/${date.day}';
+                  }
+
+                  return SideTitleWidget(
+                    meta: meta,
+                    child: Text(
+                      label,
+                      style: AppTypography.caption.copyWith(
+                        fontSize: 10,
+                        color: index == 6
+                            ? AppColors.accent
+                            : AppColors.textTertiary,
+                        fontWeight: index == 6
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 40,
+                interval: maxVal == 0
+                    ? 1800
+                    : (maxVal / 3).clamp(600, 7200).toDouble(),
+                getTitlesWidget: (value, meta) {
+                  if (value == 0) return const SizedBox();
+                  final minutes = value ~/ 60;
+                  return SideTitleWidget(
+                    meta: meta,
+                    child: Text(
+                      '${minutes}m',
+                      style: AppTypography.caption.copyWith(
+                        fontSize: 9,
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+          ),
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            horizontalInterval: maxVal == 0
+                ? 1800
+                : (maxVal / 3).clamp(600, 7200).toDouble(),
+            getDrawingHorizontalLine: (value) =>
+                FlLine(color: AppColors.gray100, strokeWidth: 1),
+          ),
+          borderData: FlBorderData(show: false),
+          barGroups: [
+            for (int i = 0; i < weekSeconds.length; i++)
+              BarChartGroupData(
+                x: i,
+                barRods: [
+                  BarChartRodData(
+                    toY: weekSeconds[i].toDouble(),
+                    color: i == 6 ? AppColors.accent : AppColors.gray200,
+                    width: 16,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(4),
+                    ),
+                    backDrawRodData: BackgroundBarChartRodData(
+                      show: true,
+                      toY: maxVal == 0 ? 3600 : maxVal.toDouble() * 1.3,
+                      color: AppColors.gray50,
+                    ),
+                  ),
+                ],
+              ),
+          ],
+        ),
+      );
+    });
   }
 }

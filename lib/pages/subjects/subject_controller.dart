@@ -8,13 +8,20 @@ class SubjectController extends GetxController {
   final IsarService _isarService = Get.find<IsarService>();
 
   final subjects = <SubjectDb>[].obs;
+  final exams = <ExamDb>[].obs;
   final selectedTabIndex = 0.obs;
   final selectedSubjectId = RxnInt();
+
+  // 대시보드 통계용
+  final todayTotalSeconds = 0.obs;
+  final weeklySeconds = <int>[0, 0, 0, 0, 0, 0, 0].obs; // 최근 7일
+  final currentStreak = 0.obs;
 
   @override
   void onInit() {
     super.onInit();
     _watchSubjects();
+    _watchExams();
   }
 
   void _watchSubjects() {
@@ -23,6 +30,89 @@ class SubjectController extends GetxController {
     ) {
       subjects.value = event;
     });
+  }
+
+  void _watchExams() {
+    _isarService.isar.examDbs
+        .where()
+        .finishedAtProperty()
+        .watch(fireImmediately: true)
+        .listen((_) async {
+          final allExams = await _isarService.isar.examDbs.where().findAll();
+          exams.value = allExams;
+          _calculateDashboardStats();
+        });
+  }
+
+  void _calculateDashboardStats() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    // 1. 오늘의 공부 시간
+    final todayExams = exams.where((e) {
+      final finishDate = DateTime(
+        e.finishedAt.year,
+        e.finishedAt.month,
+        e.finishedAt.day,
+      );
+      return finishDate.isAtSameMomentAs(today);
+    });
+    todayTotalSeconds.value = todayExams.fold(
+      0,
+      (sum, e) => sum + e.totalSeconds,
+    );
+
+    // 2. 주간 통계 (오늘 포함 최근 7일)
+    final weekStats = List.generate(7, (index) {
+      final date = today.subtract(Duration(days: index));
+      return exams
+          .where((e) {
+            final finishDate = DateTime(
+              e.finishedAt.year,
+              e.finishedAt.month,
+              e.finishedAt.day,
+            );
+            return finishDate.isAtSameMomentAs(date);
+          })
+          .fold(0, (sum, e) => sum + e.totalSeconds);
+    }).reversed.toList();
+    weeklySeconds.value = weekStats;
+
+    // 3. 스트릭 계산
+    var streak = 0;
+    var checkDate = today;
+
+    // 오늘 기록이 있는지 먼저 확인
+    bool hasToday = exams.any(
+      (e) => DateTime(
+        e.finishedAt.year,
+        e.finishedAt.month,
+        e.finishedAt.day,
+      ).isAtSameMomentAs(today),
+    );
+
+    // 만약 오늘 기록이 없다면 어제부터 시작해서 거꾸로 체크
+    if (!hasToday) {
+      checkDate = today.subtract(const Duration(days: 1));
+    }
+
+    while (true) {
+      final hasEntry = exams.any(
+        (e) => DateTime(
+          e.finishedAt.year,
+          e.finishedAt.month,
+          e.finishedAt.day,
+        ).isAtSameMomentAs(checkDate),
+      );
+
+      if (hasEntry) {
+        streak++;
+        checkDate = checkDate.subtract(const Duration(days: 1));
+      } else {
+        break;
+      }
+    }
+    currentStreak.value = streak;
   }
 
   List<SubjectDb> get mockSubjects =>

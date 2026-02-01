@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:last_timer/utils/design_tokens.dart';
 
 enum AppButtonVariant { primary, secondary, text, danger }
@@ -37,7 +38,12 @@ class AppButton extends StatelessWidget {
         color: _getBackgroundColor(isDisabled),
         borderRadius: AppRadius.mdRadius,
         child: InkWell(
-          onTap: isDisabled ? null : onPressed,
+          onTap: isDisabled
+              ? null
+              : () {
+                  HapticFeedback.lightImpact();
+                  onPressed?.call();
+                },
           borderRadius: AppRadius.mdRadius,
           splashColor: _getSplashColor(),
           child: Container(
@@ -211,7 +217,10 @@ class AppIconButton extends StatelessWidget {
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              onTap: onPressed,
+              onTap: () {
+                HapticFeedback.lightImpact();
+                onPressed?.call();
+              },
               customBorder: const CircleBorder(),
               splashColor: Colors.white.withAlpha(20),
               child: Center(

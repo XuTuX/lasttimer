@@ -153,10 +153,7 @@ class _IPadMainLayoutState extends State<IPadMainLayout>
                     indicatorWeight: 2.5,
                     indicatorPadding: const EdgeInsets.symmetric(horizontal: 4),
                     indicator: UnderlineTabIndicator(
-                      borderSide: const BorderSide(
-                        width: 3,
-                        color: AppColors.accent,
-                      ),
+                      borderSide: BorderSide(width: 3, color: AppColors.accent),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),

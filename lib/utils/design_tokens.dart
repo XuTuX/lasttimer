@@ -8,9 +8,9 @@ import 'package:flutter/material.dart';
 // ============================================================================
 
 class AppColors {
-  // Primary - Charcoal/Black as main accent
-  static const Color primary = Color(0xFF1A1A1A);
-  static const Color primaryLight = Color(0xFFF5F5F5);
+  // Primary - Deep Black for 60% of UI
+  static const Color primary = Color(0xFF000000);
+  static const Color primaryLight = Color(0xFF1A1A1A);
   static const Color primaryDark = Color(0xFF000000);
 
   // Accent - Emerald Green for 3% highlights (interactive elements)

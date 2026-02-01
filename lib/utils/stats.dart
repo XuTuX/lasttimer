@@ -61,16 +61,22 @@ class StatsUtils {
   static List<MapEntry<int, double>> getTopSlowQuestions(
     Map<int, List<int>> questionTimes, {
     double topPercent = 0.10,
+    double minThreshold = 0.0,
   }) {
     if (questionTimes.isEmpty) return [];
 
-    // 문항별 평균 시간 계산
+    // 문항별 평균 시간 계산 및 임계값 필터링
     final avgTimes = <int, double>{};
     for (final entry in questionTimes.entries) {
       if (entry.value.isNotEmpty) {
-        avgTimes[entry.key] = calculateMean(entry.value);
+        final avg = calculateMean(entry.value);
+        if (avg >= minThreshold) {
+          avgTimes[entry.key] = avg;
+        }
       }
     }
+
+    if (avgTimes.isEmpty) return [];
 
     // 평균 시간 기준 내림차순 정렬
     final sorted = avgTimes.entries.toList()
