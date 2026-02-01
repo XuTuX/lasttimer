@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:last_timer/pages/subjects/subject_controller.dart';
 import 'package:last_timer/utils/design_tokens.dart';
-import 'package:last_timer/utils/seconds_format.dart';
-import 'package:last_timer/components/components.dart';
 
 class StudyReportPage extends GetView<SubjectController> {
   const StudyReportPage({super.key});
@@ -14,318 +12,337 @@ class StudyReportPage extends GetView<SubjectController> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('학습 통계'),
+        title: const Text('학습 리포트'),
         centerTitle: true,
         elevation: 0,
         backgroundColor: AppColors.background,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.ios_share_rounded),
+            color: AppColors.textSecondary,
+            onPressed: () => _showShareSheet(context),
+          ),
+        ],
       ),
-      body: SingleChildScrollView(
+      body: _MonthlyCalendarView(),
+    );
+  }
+
+  void _showShareSheet(BuildContext context) {
+    HapticFeedback.mediumImpact();
+    Get.snackbar(
+      '공유 기능',
+      '곧 인스타그램 스토리 공유 기능이 추가됩니다!',
+      snackPosition: SnackPosition.BOTTOM,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 12,
+      backgroundColor: AppColors.gray900,
+      colorText: Colors.white,
+    );
+  }
+}
+
+class _MonthlyCalendarView extends GetView<SubjectController> {
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final currentMonth = DateTime(now.year, now.month, 1);
+
+    return Obx(() {
+      final dailyStats = _calculateDailyStats(currentMonth);
+
+      return SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildTotalStatsSection(),
+            // 월 헤더
+            _MonthHeader(month: currentMonth),
+            const SizedBox(height: 20),
+            // 요일 헤더
+            _WeekdayHeader(),
+            const SizedBox(height: 8),
+            // 캘린더 그리드
+            _CalendarGrid(month: currentMonth, dailyStats: dailyStats),
             const SizedBox(height: 24),
-            Text(
-              '주간 학습 분석',
-              style: AppTypography.headlineSmall.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            _buildChartCard(),
-            const SizedBox(height: 24),
-            _buildStreakSection(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTotalStatsSection() {
-    return AppCard(
-      padding: const EdgeInsets.all(24),
-      borderRadius: 24,
-      child: Column(
-        children: [
-          Row(
-            children: [
-              _StatItem(
-                label: '오늘 학습',
-                value: formatSeconds(controller.todayTotalSeconds.value),
-                icon: Icons.today_rounded,
-                iconColor: AppColors.accent,
-              ),
-              Container(
-                width: 1,
-                height: 40,
-                color: AppColors.gray100,
-                margin: const EdgeInsets.symmetric(horizontal: 20),
-              ),
-              _StatItem(
-                label: '주간 평균',
-                value: formatSeconds(_calculateWeeklyAverage()),
-                icon: Icons.analytics_outlined,
-                iconColor: Colors.blueAccent,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  int _calculateWeeklyAverage() {
-    final list = controller.weeklySeconds;
-    if (list.isEmpty) return 0;
-    final total = list.fold<int>(0, (sum, val) => sum + val);
-    return total ~/ list.length;
-  }
-
-  Widget _buildChartCard() {
-    return AppCard(
-      padding: const EdgeInsets.fromLTRB(16, 32, 24, 16),
-      borderRadius: 24,
-      child: Column(
-        children: [
-          SizedBox(height: 200, child: _WeeklyChart()),
-          const SizedBox(height: 16),
-          Text(
-            '지난 7일간의 학습량 변화입니다.',
-            style: AppTypography.bodySmall.copyWith(
-              color: AppColors.textTertiary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStreakSection() {
-    return AppCard(
-      padding: const EdgeInsets.all(24),
-      borderRadius: 24,
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.local_fire_department_rounded,
-              color: Colors.orange,
-              size: 28,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '현재 연속 학습 기록',
-                  style: AppTypography.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Obx(
-                  () => Text(
-                    '${controller.currentStreak.value}일째 열공 중!',
-                    style: AppTypography.headlineSmall.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatItem extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color iconColor;
-
-  const _StatItem({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.iconColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 16, color: iconColor),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: AppTypography.bodySmall.copyWith(
-                  color: AppColors.textTertiary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: AppTypography.headlineSmall.copyWith(
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _WeeklyChart extends GetView<SubjectController> {
-  @override
-  Widget build(BuildContext context) {
-    return Obx(() {
-      final weekSeconds = controller.weeklySeconds;
-      final maxVal = weekSeconds.fold<int>(0, (m, v) => v > m ? v : m);
-
-      return BarChart(
-        BarChartData(
-          alignment: BarChartAlignment.spaceAround,
-          maxY: maxVal == 0 ? 3600 : maxVal.toDouble() * 1.3,
-          barTouchData: BarTouchData(
-            enabled: true,
-            touchTooltipData: BarTouchTooltipData(
-              getTooltipColor: (_) => AppColors.gray900,
-              tooltipPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 8,
-              ),
-              tooltipMargin: 8,
-              getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                return BarTooltipItem(
-                  formatSeconds(rod.toY.toInt()),
-                  AppTypography.bodySmall.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                );
-              },
-            ),
-          ),
-          titlesData: FlTitlesData(
-            show: true,
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 30,
-                getTitlesWidget: (value, meta) {
-                  final index = value.toInt();
-                  if (index < 0 || index >= 7) return const SizedBox();
-
-                  String label = '';
-                  if (index == 6) {
-                    label = '오늘';
-                  } else {
-                    final date = DateTime.now().subtract(
-                      Duration(days: 6 - index),
-                    );
-                    label = '${date.month}/${date.day}';
-                  }
-
-                  return SideTitleWidget(
-                    meta: meta,
-                    child: Text(
-                      label,
-                      style: AppTypography.caption.copyWith(
-                        fontSize: 10,
-                        color: index == 6
-                            ? AppColors.accent
-                            : AppColors.textTertiary,
-                        fontWeight: index == 6
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 45,
-                interval: maxVal == 0
-                    ? 1800
-                    : (maxVal / 3).clamp(600, 7200).toDouble(),
-                getTitlesWidget: (value, meta) {
-                  if (value == 0) return const SizedBox();
-                  final minutes = value ~/ 60;
-                  return SideTitleWidget(
-                    meta: meta,
-                    child: Text(
-                      '${minutes}m',
-                      style: AppTypography.caption.copyWith(
-                        fontSize: 9,
-                        color: AppColors.textTertiary,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            topTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            rightTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-          ),
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: false,
-            horizontalInterval: maxVal == 0
-                ? 1800
-                : (maxVal / 3).clamp(600, 7200).toDouble(),
-            getDrawingHorizontalLine: (value) =>
-                FlLine(color: AppColors.gray100, strokeWidth: 1),
-          ),
-          borderData: FlBorderData(show: false),
-          barGroups: [
-            for (int i = 0; i < weekSeconds.length; i++)
-              BarChartGroupData(
-                x: i,
-                barRods: [
-                  BarChartRodData(
-                    toY: weekSeconds[i].toDouble(),
-                    color: i == 6 ? AppColors.accent : AppColors.gray200,
-                    width: 18,
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(6),
-                    ),
-                    backDrawRodData: BackgroundBarChartRodData(
-                      show: true,
-                      toY: maxVal == 0 ? 3600 : maxVal.toDouble() * 1.3,
-                      color: AppColors.gray50,
-                    ),
-                  ),
-                ],
-              ),
+            // 이번 달 요약
+            _MonthlySummary(dailyStats: dailyStats),
           ],
         ),
       );
     });
+  }
+
+  Map<int, _DayStats> _calculateDailyStats(DateTime month) {
+    final stats = <int, _DayStats>{};
+    final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
+
+    for (int day = 1; day <= daysInMonth; day++) {
+      final date = DateTime(month.year, month.month, day);
+      final dayExams = controller.exams.where((e) {
+        final examDate = DateTime(
+          e.finishedAt.year,
+          e.finishedAt.month,
+          e.finishedAt.day,
+        );
+        return examDate.isAtSameMomentAs(date);
+      }).toList();
+
+      if (dayExams.isNotEmpty) {
+        final totalSeconds = dayExams.fold<int>(
+          0,
+          (sum, e) => sum + e.totalSeconds,
+        );
+        final totalQuestions = dayExams.fold<int>(
+          0,
+          (sum, e) => sum + e.questionCount,
+        );
+        stats[day] = _DayStats(
+          seconds: totalSeconds,
+          questions: totalQuestions,
+        );
+      }
+    }
+
+    return stats;
+  }
+}
+
+class _DayStats {
+  final int seconds;
+  final int questions;
+
+  _DayStats({required this.seconds, required this.questions});
+}
+
+class _MonthHeader extends StatelessWidget {
+  final DateTime month;
+
+  const _MonthHeader({required this.month});
+
+  @override
+  Widget build(BuildContext context) {
+    final monthNames = [
+      '1월',
+      '2월',
+      '3월',
+      '4월',
+      '5월',
+      '6월',
+      '7월',
+      '8월',
+      '9월',
+      '10월',
+      '11월',
+      '12월',
+    ];
+
+    return Text(
+      '${month.year}년 ${monthNames[month.month - 1]}',
+      style: AppTypography.headlineLarge.copyWith(fontWeight: FontWeight.bold),
+    );
+  }
+}
+
+class _WeekdayHeader extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+
+    return Row(
+      children: weekdays.map((day) {
+        return Expanded(
+          child: Center(
+            child: Text(
+              day,
+              style: AppTypography.caption.copyWith(
+                color: AppColors.textTertiary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+class _CalendarGrid extends StatelessWidget {
+  final DateTime month;
+  final Map<int, _DayStats> dailyStats;
+
+  const _CalendarGrid({required this.month, required this.dailyStats});
+
+  @override
+  Widget build(BuildContext context) {
+    final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
+    final firstWeekday = DateTime(month.year, month.month, 1).weekday % 7;
+    final today = DateTime.now();
+    final isCurrentMonth =
+        today.year == month.year && today.month == month.month;
+
+    final cells = <Widget>[];
+
+    for (int i = 0; i < firstWeekday; i++) {
+      cells.add(const SizedBox());
+    }
+
+    for (int day = 1; day <= daysInMonth; day++) {
+      final stats = dailyStats[day];
+      final isToday = isCurrentMonth && today.day == day;
+      final isFuture = isCurrentMonth && day > today.day;
+
+      cells.add(
+        _DayCell(day: day, stats: stats, isToday: isToday, isFuture: isFuture),
+      );
+    }
+
+    return GridView.count(
+      crossAxisCount: 7,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      childAspectRatio: 0.7,
+      mainAxisSpacing: 8,
+      crossAxisSpacing: 4,
+      children: cells,
+    );
+  }
+}
+
+class _DayCell extends StatelessWidget {
+  final int day;
+  final _DayStats? stats;
+  final bool isToday;
+  final bool isFuture;
+
+  const _DayCell({
+    required this.day,
+    this.stats,
+    required this.isToday,
+    required this.isFuture,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasStudy = stats != null && stats!.seconds > 0;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: hasStudy ? AppColors.accent.withAlpha(15) : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        border: isToday
+            ? Border.all(color: AppColors.accent, width: 1.5)
+            : null,
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            '$day',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: isToday ? FontWeight.w700 : FontWeight.w500,
+              color: isFuture
+                  ? AppColors.textTertiary
+                  : (hasStudy ? AppColors.accent : AppColors.textPrimary),
+            ),
+          ),
+          if (hasStudy) ...[
+            const SizedBox(height: 4),
+            Text(
+              _formatTime(stats!.seconds),
+              style: TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.w600,
+                color: AppColors.accent,
+              ),
+            ),
+            Text(
+              '${stats!.questions}문제',
+              style: TextStyle(fontSize: 8, color: AppColors.textTertiary),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _formatTime(int seconds) {
+    final hours = seconds ~/ 3600;
+    final mins = (seconds % 3600) ~/ 60;
+    if (hours > 0) {
+      return '${hours}h ${mins}m';
+    }
+    return '${mins}m';
+  }
+}
+
+class _MonthlySummary extends StatelessWidget {
+  final Map<int, _DayStats> dailyStats;
+
+  const _MonthlySummary({required this.dailyStats});
+
+  @override
+  Widget build(BuildContext context) {
+    final totalSeconds = dailyStats.values.fold<int>(
+      0,
+      (sum, s) => sum + s.seconds,
+    );
+    final totalQuestions = dailyStats.values.fold<int>(
+      0,
+      (sum, s) => sum + s.questions,
+    );
+    final studyDays = dailyStats.length;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.gray50,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _SummaryItem(label: '공부한 날', value: '$studyDays일'),
+          _SummaryItem(label: '총 시간', value: _formatTotalTime(totalSeconds)),
+          _SummaryItem(label: '푼 문제', value: '$totalQuestions문제'),
+        ],
+      ),
+    );
+  }
+
+  String _formatTotalTime(int seconds) {
+    final hours = seconds ~/ 3600;
+    final mins = (seconds % 3600) ~/ 60;
+    if (hours > 0) {
+      return '${hours}시간';
+    }
+    return '${mins}분';
+  }
+}
+
+class _SummaryItem extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _SummaryItem({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: AppTypography.headlineSmall.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: AppTypography.caption.copyWith(color: AppColors.textTertiary),
+        ),
+      ],
+    );
   }
 }
